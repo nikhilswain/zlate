@@ -1,0 +1,110 @@
+"use client";
+
+import { useEffect } from "react";
+import {
+  addDays,
+  addMonths,
+  addYears,
+  subDays,
+  subMonths,
+  subYears,
+} from "date-fns";
+import { useUIStore } from "@/store/useUIStore";
+import { useSettings } from "@/hooks/useSettings";
+import { updateSettings } from "@/lib/settings";
+import type { CalendarView } from "@/types/project";
+
+const VIEW_ORDER: CalendarView[] = ["month", "week", "year"];
+
+export function KeyboardShortcuts() {
+  const { view, renderMode } = useSettings();
+  const currentDate = useUIStore((s) => s.currentDate);
+  const setCurrentDate = useUIStore((s) => s.setCurrentDate);
+  const popoverAnchor = useUIStore((s) => s.popoverAnchor);
+  const selectedProjectId = useUIStore((s) => s.selectedProjectId);
+  const focusedProjectIds = useUIStore((s) => s.focusedProjectIds);
+  const closeCreatePopover = useUIStore((s) => s.closeCreatePopover);
+  const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const clearFocus = useUIStore((s) => s.clearFocus);
+
+  useEffect(() => {
+    function isEditableTarget(t: EventTarget | null): boolean {
+      if (!(t instanceof HTMLElement)) return false;
+      const tag = t.tagName;
+      return (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        t.isContentEditable
+      );
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "Escape" && isEditableTarget(e.target)) return;
+
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          setCurrentDate(
+            view === "month"
+              ? subMonths(currentDate, 1)
+              : view === "week"
+                ? subDays(currentDate, 7)
+                : subYears(currentDate, 1),
+          );
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          setCurrentDate(
+            view === "month"
+              ? addMonths(currentDate, 1)
+              : view === "week"
+                ? addDays(currentDate, 7)
+                : addYears(currentDate, 1),
+          );
+          break;
+        case "v":
+        case "V": {
+          const idx = VIEW_ORDER.indexOf(view);
+          void updateSettings({
+            view: VIEW_ORDER[(idx + 1) % VIEW_ORDER.length],
+          });
+          break;
+        }
+        case "m":
+        case "M":
+          if (view !== "year") {
+            void updateSettings({
+              renderMode: renderMode === "pills" ? "painted" : "pills",
+            });
+          }
+          break;
+        case "Escape":
+          if (popoverAnchor) {
+            closeCreatePopover();
+          } else if (selectedProjectId) {
+            setSelectedProjectId(null);
+          } else if (focusedProjectIds.size > 0) {
+            clearFocus();
+          }
+          break;
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [
+    view,
+    renderMode,
+    currentDate,
+    popoverAnchor,
+    selectedProjectId,
+    focusedProjectIds,
+    setCurrentDate,
+    closeCreatePopover,
+    setSelectedProjectId,
+    clearFocus,
+  ]);
+
+  return null;
+}
