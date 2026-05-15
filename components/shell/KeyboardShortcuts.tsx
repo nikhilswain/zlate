@@ -21,11 +21,17 @@ export function KeyboardShortcuts() {
   const currentDate = useUIStore((s) => s.currentDate);
   const setCurrentDate = useUIStore((s) => s.setCurrentDate);
   const popoverAnchor = useUIStore((s) => s.popoverAnchor);
+  const dayOverflowPopover = useUIStore((s) => s.dayOverflowPopover);
   const selectedProjectId = useUIStore((s) => s.selectedProjectId);
   const focusedProjectIds = useUIStore((s) => s.focusedProjectIds);
+  const projectIdPendingDelete = useUIStore((s) => s.projectIdPendingDelete);
   const closeCreatePopover = useUIStore((s) => s.closeCreatePopover);
+  const closeDayOverflowPopover = useUIStore(
+    (s) => s.closeDayOverflowPopover,
+  );
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
   const clearFocus = useUIStore((s) => s.clearFocus);
+  const cancelDeleteProject = useUIStore((s) => s.cancelDeleteProject);
 
   useEffect(() => {
     function isEditableTarget(t: EventTarget | null): boolean {
@@ -81,8 +87,12 @@ export function KeyboardShortcuts() {
           }
           break;
         case "Escape":
-          if (popoverAnchor) {
+          if (projectIdPendingDelete) {
+            cancelDeleteProject();
+          } else if (popoverAnchor) {
             closeCreatePopover();
+          } else if (dayOverflowPopover) {
+            closeDayOverflowPopover();
           } else if (selectedProjectId) {
             setSelectedProjectId(null);
           } else if (focusedProjectIds.size > 0) {
@@ -98,12 +108,16 @@ export function KeyboardShortcuts() {
     renderMode,
     currentDate,
     popoverAnchor,
+    dayOverflowPopover,
     selectedProjectId,
     focusedProjectIds,
+    projectIdPendingDelete,
     setCurrentDate,
     closeCreatePopover,
+    closeDayOverflowPopover,
     setSelectedProjectId,
     clearFocus,
+    cancelDeleteProject,
   ]);
 
   return null;

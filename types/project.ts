@@ -3,6 +3,7 @@ export type Project = {
   name: string;
   icon?: string;
   baseColor: string;
+  description?: string;
   startDate: Date;
   endDate: Date;
   createdAt: Date;

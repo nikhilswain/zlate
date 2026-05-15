@@ -7,8 +7,9 @@ import { Trash2, X } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { useUIStore } from "@/store/useUIStore";
-import { softDeleteProject, updateProject } from "@/lib/projects";
+import { MAX_DESCRIPTION_CHARS, updateProject } from "@/lib/projects";
 import { PROJECT_EMOJIS, PROJECT_PALETTE } from "@/lib/palette";
+import { CharCounter } from "./CharCounter";
 
 const PALETTE = PROJECT_PALETTE;
 const EMOJIS = PROJECT_EMOJIS;
@@ -31,6 +32,7 @@ export function ProjectDetailPanel() {
           initialName={project.name}
           initialIcon={project.icon}
           initialColor={project.baseColor}
+          initialDescription={project.description}
           initialStart={project.startDate}
           initialEnd={project.endDate}
           onClose={() => setSelectedProjectId(null)}
@@ -45,6 +47,7 @@ type InnerProps = {
   initialName: string;
   initialIcon: string | undefined;
   initialColor: string;
+  initialDescription: string | undefined;
   initialStart: Date;
   initialEnd: Date;
   onClose: () => void;
@@ -55,22 +58,27 @@ function PanelInner({
   initialName,
   initialIcon,
   initialColor,
+  initialDescription,
   initialStart,
   initialEnd,
   onClose,
 }: InnerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const askDeleteProject = useUIStore((s) => s.askDeleteProject);
+  const projectIdPendingDelete = useUIStore((s) => s.projectIdPendingDelete);
 
   const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState<string | undefined>(initialIcon);
   const [color, setColor] = useState(initialColor);
+  const [description, setDescription] = useState(initialDescription ?? "");
   const [startStr, setStartStr] = useState(format(initialStart, "yyyy-MM-dd"));
   const [endStr, setEndStr] = useState(format(initialEnd, "yyyy-MM-dd"));
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        // ignore pointerdowns while the delete modal owns the screen
+        if (projectIdPendingDelete) return;
         onClose();
       }
     }
@@ -78,7 +86,7 @@ function PanelInner({
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [onClose]);
+  }, [onClose, projectIdPendingDelete]);
 
   const { startDate, endDate } = useMemo(() => {
     const s = new Date(`${startStr}T00:00:00`);
@@ -88,11 +96,6 @@ function PanelInner({
 
   async function commitChange(patch: Parameters<typeof updateProject>[1]) {
     await updateProject(projectId, patch);
-  }
-
-  async function handleDelete() {
-    await softDeleteProject(projectId);
-    onClose();
   }
 
   return (
@@ -140,6 +143,30 @@ function PanelInner({
             }}
             className="w-full bg-bg border border-border rounded-md px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-fg-muted transition-colors"
           />
+        </Field>
+
+        <Field label="Description">
+          <div className="relative">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onBlur={() => {
+                const next = description.trim();
+                const initial = initialDescription ?? "";
+                if (next !== initial) void commitChange({ description });
+              }}
+              maxLength={MAX_DESCRIPTION_CHARS}
+              rows={4}
+              placeholder="A short note about this project…"
+              className="w-full bg-bg border border-border rounded-md px-3 py-2 pr-9 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-fg-muted transition-colors resize-none leading-relaxed"
+            />
+            <div className="absolute bottom-2 right-2 pointer-events-none">
+              <CharCounter
+                count={description.length}
+                max={MAX_DESCRIPTION_CHARS}
+              />
+            </div>
+          </div>
         </Field>
 
         <Field label="Color">
@@ -224,36 +251,14 @@ function PanelInner({
       </div>
 
       <footer className="px-5 py-4 border-t border-border-subtle">
-        {confirmDelete ? (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-fg-muted">Delete this project?</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="px-3 py-1.5 text-xs text-fg-muted hover:text-fg rounded transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="flex items-center gap-2 text-xs text-fg-muted hover:text-red-400 transition-colors"
-          >
-            <Trash2 size={14} />
-            Delete project
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => askDeleteProject(projectId)}
+          className="flex items-center gap-2 text-xs text-fg-muted hover:text-red-400 transition-colors"
+        >
+          <Trash2 size={14} />
+          Delete project
+        </button>
       </footer>
     </motion.aside>
   );

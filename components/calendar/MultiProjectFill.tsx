@@ -15,10 +15,29 @@ const MAX_PILLS = 3;
 const STAGGER_PER_DAY = 0.02;
 
 export function MultiProjectFill({ projects, isPast, day }: Props) {
+  const openDayOverflowPopover = useUIStore(
+    (s) => s.openDayOverflowPopover,
+  );
+
   if (projects.length === 0) return null;
 
   const visible = projects.slice(0, MAX_PILLS);
   const extra = projects.length - visible.length;
+
+  function handleOverflowClick(e: React.MouseEvent<HTMLButtonElement>) {
+    e.stopPropagation();
+    const cell = e.currentTarget.closest(
+      "[data-day-cell]",
+    ) as HTMLElement | null;
+    const target = cell ?? e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    openDayOverflowPopover(day, {
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+    });
+  }
 
   return (
     <div className="flex flex-col gap-0.5 mt-auto">
@@ -26,9 +45,13 @@ export function MultiProjectFill({ projects, isPast, day }: Props) {
         <Pill key={p.id} project={p} day={day} isPast={isPast} />
       ))}
       {extra > 0 && (
-        <div className="text-[10.5px] font-medium text-fg-subtle px-1.5 leading-tight">
+        <button
+          type="button"
+          onClick={handleOverflowClick}
+          className="text-[10.5px] font-medium text-fg-subtle hover:text-fg px-1.5 leading-tight text-left transition-colors"
+        >
           +{extra} more
-        </div>
+        </button>
       )}
     </div>
   );

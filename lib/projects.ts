@@ -13,9 +13,12 @@ type UpdateInput = Partial<{
   name: string;
   icon: string | undefined;
   baseColor: string;
+  description: string | undefined;
   startDate: Date;
   endDate: Date;
 }>;
+
+export const MAX_DESCRIPTION_CHARS = 280;
 
 function normalizeDay(d: Date): Date {
   const out = new Date(d);
@@ -53,6 +56,10 @@ export async function updateProject(
   if (patch.startDate !== undefined) next.startDate = normalizeDay(patch.startDate);
   if (patch.endDate !== undefined) next.endDate = normalizeDay(patch.endDate);
   if (patch.baseColor !== undefined) next.baseColor = patch.baseColor;
+  if (patch.description !== undefined) {
+    const trimmed = patch.description.trim();
+    next.description = trimmed.length > 0 ? trimmed : undefined;
+  }
   await db.projects.put(next);
 }
 

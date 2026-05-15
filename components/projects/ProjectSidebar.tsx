@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { Trash2 } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useUIStore } from "@/store/useUIStore";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
@@ -10,6 +11,7 @@ export function ProjectSidebar() {
   const focused = useUIStore((s) => s.focusedProjectIds);
   const toggleFocus = useUIStore((s) => s.toggleFocus);
   const clearFocus = useUIStore((s) => s.clearFocus);
+  const askDeleteProject = useUIStore((s) => s.askDeleteProject);
 
   const hasFocus = focused.size > 0;
 
@@ -47,19 +49,22 @@ export function ProjectSidebar() {
             {projects.map((p) => {
               const isFocused = focused.has(p.id);
               return (
-                <li key={p.id}>
+                <li
+                  key={p.id}
+                  className={
+                    "group flex items-stretch rounded-md transition-colors " +
+                    (isFocused
+                      ? "bg-fg/[0.08]"
+                      : hasFocus
+                        ? "opacity-50 hover:opacity-100 hover:bg-surface-elevated"
+                        : "hover:bg-surface-elevated")
+                  }
+                >
                   <button
                     type="button"
                     onClick={() => toggleFocus(p.id)}
                     aria-pressed={isFocused}
-                    className={
-                      "group w-full flex items-center gap-2.5 px-2 py-2 rounded-md text-left transition-colors " +
-                      (isFocused
-                        ? "bg-fg/[0.08]"
-                        : hasFocus
-                          ? "opacity-50 hover:opacity-100 hover:bg-surface-elevated"
-                          : "hover:bg-surface-elevated")
-                    }
+                    className="flex-1 min-w-0 flex items-center gap-2.5 px-2 py-2 text-left rounded-md"
                   >
                     <span
                       aria-hidden
@@ -79,6 +84,17 @@ export function ProjectSidebar() {
                         {format(p.startDate, "MMM d")} – {format(p.endDate, "MMM d")}
                       </div>
                     </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      askDeleteProject(p.id);
+                    }}
+                    aria-label={`Delete ${p.name}`}
+                    className="px-2 flex items-center text-fg-subtle hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                  >
+                    <Trash2 size={13} />
                   </button>
                 </li>
               );

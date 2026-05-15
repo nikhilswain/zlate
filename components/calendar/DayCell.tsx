@@ -51,7 +51,7 @@ export function DayCell({ day, isInMonth, renderMode }: Props) {
   if (isPaintedFilled) {
     const dateColor = readableTextColor(projects[0].baseColor);
     return (
-      <div ref={cellRef} className={wrapperClass}>
+      <div ref={cellRef} data-day-cell className={wrapperClass}>
         <PaintedFill projects={projects} isPast={past} day={day} />
         <button
           type="button"
@@ -70,7 +70,12 @@ export function DayCell({ day, isInMonth, renderMode }: Props) {
   }
 
   return (
-    <div ref={cellRef} onClick={triggerCreate} className={wrapperClass}>
+    <div
+      ref={cellRef}
+      data-day-cell
+      onClick={triggerCreate}
+      className={wrapperClass}
+    >
       <div
         className={
           "text-[11px] leading-none font-medium " +

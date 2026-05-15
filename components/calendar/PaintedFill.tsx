@@ -14,6 +14,10 @@ const MAX_BANDS = 6;
 const STAGGER_PER_DAY = 0.02;
 
 export function PaintedFill({ projects, isPast, day }: Props) {
+  const openDayOverflowPopover = useUIStore(
+    (s) => s.openDayOverflowPopover,
+  );
+
   if (projects.length === 0) return null;
 
   const showOverflow = projects.length > MAX_BANDS;
@@ -21,6 +25,21 @@ export function PaintedFill({ projects, isPast, day }: Props) {
     ? projects.slice(0, MAX_BANDS - 1)
     : projects.slice(0, MAX_BANDS);
   const extra = showOverflow ? projects.length - visible.length : 0;
+
+  function handleOverflowClick(e: React.MouseEvent<HTMLButtonElement>) {
+    e.stopPropagation();
+    const cell = e.currentTarget.closest(
+      "[data-day-cell]",
+    ) as HTMLElement | null;
+    const target = cell ?? e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    openDayOverflowPopover(day, {
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+    });
+  }
 
   return (
     <div className="absolute inset-0 flex flex-col">
@@ -30,7 +49,7 @@ export function PaintedFill({ projects, isPast, day }: Props) {
       {showOverflow && (
         <button
           type="button"
-          onClick={(e) => e.stopPropagation()}
+          onClick={handleOverflowClick}
           className="h-3 bg-fg-subtle/30 text-fg-muted text-[9px] font-medium flex items-center justify-center hover:bg-fg-subtle/50 transition-colors"
         >
           +{extra}
