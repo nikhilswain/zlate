@@ -1,5 +1,67 @@
 # Changelog
 
+## 0.2.0 — Daily notes, sidebar collapse, mobile
+
+### Daily notes
+
+- New Dexie table `dayNotes` with `{ id, projectId, dateKey, text, createdAt, updatedAt, deletedAt }` and a compound `[projectId+dateKey]` index. Dexie version bumped to 2; existing DBs migrate cleanly via additive schema.
+- Project detail panel now has two modes selected by entry point:
+  - **Day mode** — opened by clicking any pill or band on the calendar. Date-first header (`Saturday · May 16`), small clickable project chip below, autoFocused 4-row textarea with the existing circular char counter (cap 280).
+  - **Project mode** — opened by the gear icon in a sidebar row. Project-first header, existing name/description/color/icon/date fields, plus a new `Notes (N)` section listing every day-note for the project (newest first). Clicking a note jumps to Day mode for that date.
+- One panel shell, two layouts. Visual differentiation is structural (date-first vs project-first), not chromatic.
+- Save behavior: auto-save on blur **and** on unmount, so closing via Esc, click-outside, panel-mode switch, or jumping to a different day all commit any pending text. `upsertDayNote` is idempotent so the safety-net commit is harmless on the normal blur path.
+- Per-note trash button in the Day mode footer (only visible when the note exists). No confirmation modal — day notes are quick to re-write, unlike a full project delete.
+- Soft-deleting a project cascades to soft-delete all of its day notes.
+
+### Sidebar collapse
+
+- New `sidebarCollapsed: boolean` field on the Settings singleton, persisted via Dexie.
+- **Rail mode** — 56 px wide. Vertical stack of 36 px colored circles (emoji-on-color if the project has an icon, solid color otherwise). Focused projects get a ring outline; non-focused dim to 50 % opacity. Theme toggle pinned at the bottom; expand chevron at the top; mini × button at the top when focus is active.
+- Per-circle hover tooltip uses `position: fixed` + portal-style placement so it escapes the aside's `overflow: hidden`. Left-pointing arrow matches the heatmap tooltip visually.
+- Width animates 230 ↔ 56 via CSS `transition: width 320ms`; inner content swaps via Framer `AnimatePresence` opacity fade.
+- Expanded width slimmed from 260 → 230 px.
+
+### Calendar layout
+
+- Month and Week views now fit the viewport — no vertical scroll. Rows distribute equally via `grid-template-rows: repeat(N, minmax(0, 1fr))`. `minmax(0, 1fr)` (not plain `1fr`) is the key trick: it lets rows shrink below their content size, and the cells' existing `overflow-hidden` handles any clipping.
+- Calendar shell's view container kept `overflow-auto` for the Year heatmap (which can still scroll horizontally on narrow desktops), and gained `min-h-0` so flex children can actually shrink.
+
+### Navigation — wheel / trackpad
+
+- Scroll on the calendar viewport advances the period (Month ± 1 month, Week ± 1 week, Year ± 1 year). Down = next, up = previous. Horizontal swipes also count.
+- **Gesture-end debouncing** (200 ms silence threshold) instead of a leading-edge throttle. A long trackpad swipe with its 500–1000 ms inertia tail counts as one gesture; only fires nav once. Was throttle-based first, but the throttle let inertia tails sneak through.
+- **Year view splits axis-wise**: vertical-dominant wheel events navigate the year; horizontal-dominant fall through to the browser's native horizontal scroll so the heatmap can still pan on narrow viewports.
+- Uses native `addEventListener('wheel', ..., { passive: false })` rather than React's synthetic `onWheel` because we need `preventDefault()` to stop page scroll — React's synthetic wheel listeners are forced-passive.
+
+### Year heatmap auto-fit
+
+- Cell size is now computed via `ResizeObserver` to fill exactly the available container width. Adjusts when the sidebar collapses/expands or the window resizes.
+- Clamp range: `[10, 22] px` on desktop (53 columns), `[24, 48] px` on mobile (7 columns transposed).
+- Dropped the GitHub-style every-other day-label convention — all seven labels (`Mo, Tu, We, Th, Fr, Sa, Su`) now show, on both desktop and mobile, for consistency with the rest of the UI.
+
+### Week start
+
+- Default flipped from Monday (`weekStartsOn: 1`) to Sunday (`weekStartsOn: 0`). All three views read from the same Settings field, so the one-line change propagates without per-view code edits.
+
+### Mobile responsiveness
+
+Single breakpoint at `< 768 px` via a `useIsMobile()` hook using `useSyncExternalStore` (avoids the one-frame layout flash that plain `useState + useEffect` produces on post-hydration mounts).
+
+- **Sidebar** becomes an off-canvas drawer (~280 px wide) sliding from the left with a backdrop. Hamburger button in the header opens it. Backdrop tap / Esc / any project-row action all auto-close. Esc priority order in keyboard shortcuts updated.
+- **Header** reflows to two rows on mobile: row 1 is `[☰] Title` + `[‹ Today ›]`, row 2 is the segmented view switcher + render-mode toggle.
+- **All five overlays as bottom sheets** — Project Detail panel (both Day and Project modes), Day Overflow popover, Create Project popover, Delete Project modal, and (by extension) Day Note view. Each slides up from the bottom with rounded top corners, a drag-handle indicator, and a backdrop blur. Same animation timing (~0.28 s with `[0.16, 1, 0.3, 1]` expo-out) across all five.
+- **Pills mode pills** render as bare colored bars (`h-3`, no icon, no text) on mobile. Identity comes from color alone. `+N more` shortens to `+N`. Painted mode is unchanged — full-cell bands already worked at any width.
+- **Year heatmap transposed 90°** on mobile. Desktop is `53 weeks × 7 days` running left-to-right; mobile is `7 days × 53 weeks` running top-to-bottom. Day labels (Mo–Su) across the top, month labels in the leftmost column on rows where a new month begins. Scrolls vertically; no hover tooltip (tap navigates to month).
+- **Touch swipe-to-nav** replaces wheel-nav on mobile. Horizontal-dominant swipes ≥ 50 px navigate (left = next, right = previous, page-flip metaphor). Vertical-dominant swipes pass through to native scroll. Max gesture duration 600 ms to filter out long drags.
+- **Drawer row actions** (gear, trash) are always visible on mobile with larger tap targets (15 px icons, ~37–40 px wide buttons). Hover-revealed on desktop unchanged.
+
+### Bug fixes
+
+- `ProjectDeleteModal` — split into outer (handles open/close state from Zustand) and a keyed inner (`key={project.id}`) so React re-mounts the inner with fresh `useState("")` each time. Eliminates the React 19 "Calling setState synchronously within an effect" warning that fired when `setConfirm("")` ran inside an effect keyed on `pendingId`.
+- `CreateProjectPopover` and `DayOverflowPopover` — wrapped in `AnimatePresence` and split into outer/inner so the `exit` prop on the motion content actually plays. Previously the components just returned `null` when the anchor cleared, so close was instant.
+- `CreateProjectPopover` color picker — `useState(PALETTE[5])` was inferring the literal `"#22c55e"` type (because `PROJECT_PALETTE` is declared `as const`), so `setColor(otherColor)` failed at compile time. Fixed by explicitly typing `useState<string>(...)`.
+- `ProjectDetailPanel` `useLiveQuery` callback returned `... | null`, which doesn't satisfy `useLiveQuery`'s callback signature. Returned `undefined` instead.
+
 ## 0.1.0 — Initial build
 
 ### Foundation

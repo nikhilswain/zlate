@@ -325,6 +325,33 @@ Frontend-only. No backend, no auth, no API calls. The data layer is built to be 
 
 When a tradeoff arises, the higher-priority item wins.
 
+## Future plans
+
+Things deferred for later, not built yet. These don't change the current scope — they're a parking lot for things worth designing properly when the time comes.
+
+### Sync — Supabase + thin Next.js backend, no auth
+
+The data model already shipped is sync-ready (UUIDs generated client-side, `updatedAt` on every row, `deletedAt` tombstones instead of hard deletes). What's missing is the actual transport.
+
+**Sketch:**
+
+- **Storage** — Supabase Postgres tables mirroring the Dexie schema: `projects`, `day_notes`, `settings`. Same column names, same UUIDs.
+- **Backend** — thin Next.js API routes (`app/api/sync/push/route.ts`, `app/api/sync/pull/route.ts`) that wrap the Supabase service-role client. The frontend never sees the Supabase key directly; the API route is the only thing that talks to Postgres.
+- **No auth (v1)** — single-tenant or shared-key for personal use. Auth (Supabase Auth, magic links, whatever) is a separate later step.
+- **Push** — client batches rows whose `updatedAt > lastSyncedAt` and POSTs them. Server upserts by `id`. Server stamps a server-side `updatedAt` on accept so client clocks don't matter.
+- **Pull** — client GETs rows where `updatedAt > lastSyncedAt`. Server returns the delta.
+- **Conflict resolution** — last-write-wins by `updatedAt`. Good enough for single-user-multi-device, which is the realistic use case.
+- **Tombstones** — `deletedAt` rows sync like any other row. Server-side cron sweeps tombstones older than ~30 days.
+- **Triggering** — sync on app focus, periodic interval (~30 s), and a manual "sync now" affordance. Each device tracks its own `lastSyncedAt` in the Dexie settings row.
+- **Backwards compat** — no schema migration needed when sync turns on. Existing local-only DBs just start syncing from "now".
+
+We'll design this properly (queue + retry, offline mode behaviour, optimistic UI, conflict UI if we ever need it) when we actually sit down to build it. This is just the sketch.
+
+### Other things worth revisiting
+
+- **Settings UI** — currently theme is toggleable in the sidebar, but `weekStartsOn`, `renderMode`, and `view` are persisted without a dedicated settings surface. A small settings sheet would let users flip week start to Monday, choose default view on load, etc.
+- **Search** — find a project / note across the whole DB. Listed under Out of scope today, but reasonable to revisit once notes accumulate.
+
 ## Explicitly out of scope
 
 Completion toggles, progress percentages, blockers, missed-day warnings, productivity analytics, streaks, particle effects, sound, drag-to-paint, multi-select, recurring projects, tags, search, undo/redo, sharing, exports. Do not add these even if they seem like obvious next steps. Ship the smaller thing first.
