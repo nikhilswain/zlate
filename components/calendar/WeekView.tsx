@@ -22,8 +22,8 @@ export function WeekView() {
   const labels = weekdayLabels(weekStartsOn);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-7 gap-2">
+    <div className="flex flex-col gap-2 h-full min-h-0">
+      <div className="grid grid-cols-7 gap-2 shrink-0">
         {labels.map((label) => (
           <div
             key={label}
@@ -33,7 +33,10 @@ export function WeekView() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-2 auto-rows-[420px]">
+      <div
+        className="grid grid-cols-7 gap-2 flex-1 min-h-0"
+        style={{ gridTemplateRows: "minmax(0, 1fr)" }}
+      >
         {days.map((day) => (
           <DayCell
             key={day.toISOString()}
