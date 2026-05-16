@@ -69,7 +69,7 @@ function ModalInner({ project }: { project: Project }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 8 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[400px] bg-surface-elevated border border-border rounded-lg shadow-2xl"
+        className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[400px] max-w-[90vw] bg-surface-elevated border border-border rounded-lg shadow-2xl"
       >
         <header className="flex items-center justify-between px-5 py-3.5 border-b border-border-subtle">
           <div className="flex items-center gap-2.5">

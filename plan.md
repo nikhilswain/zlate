@@ -237,7 +237,7 @@ In Pills mode on mobile, pill rendering drops the icon **and** the project name.
 All become bottom sheets or full-screen modals on mobile:
 
 - **Project detail panel**: slides up from the bottom instead of from the right. Full-width, ~75% viewport height max, swipe-down or backdrop-tap to dismiss. Day mode and Project mode reuse the same shell.
-- **Create project popover**: full-screen modal. Anchored positioning makes no sense at phone width.
+- **Create project popover**: bottom sheet on mobile, same pattern as the detail panel. Anchored positioning makes no sense at phone width, and bottom-sheet consistency across all mobile overlays beats a one-off centered modal.
 - **Day overflow popover**: bottom sheet (same pattern as detail panel).
 - **Delete modal**: gets `max-w-[90vw]` so the fixed 400 px width doesn't overflow narrow viewports.
 
