@@ -121,51 +121,45 @@ export function CalendarShell() {
 
   return (
     <div className="flex flex-1 flex-col min-w-0">
-      <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
-        <div className="flex items-center gap-2 min-w-0">
-          {isMobile && (
-            <IconButton label="Open sidebar" onClick={openMobileSidebar}>
-              <Menu size={16} />
-            </IconButton>
-          )}
+      {isMobile ? (
+        <header className="flex flex-col gap-2 px-4 py-3 border-b border-border-subtle">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <IconButton label="Open sidebar" onClick={openMobileSidebar}>
+                <Menu size={16} />
+              </IconButton>
+              <h2 className="text-lg font-medium text-fg whitespace-nowrap truncate">
+                {heading}
+              </h2>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <NavControls nav={nav} setCurrentDate={setCurrentDate} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <ViewControls
+              view={view}
+              renderMode={renderMode}
+              toggleRenderMode={toggleRenderMode}
+            />
+          </div>
+        </header>
+      ) : (
+        <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
           <h2 className="text-lg font-medium text-fg whitespace-nowrap">
             {heading}
           </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <ViewSwitcher current={view} />
-          {view !== "year" && (
-            <IconButton
-              label={
-                renderMode === "pills"
-                  ? "Switch to painted mode"
-                  : "Switch to pills mode"
-              }
-              onClick={toggleRenderMode}
-            >
-              {renderMode === "pills" ? (
-                <Rows3 size={15} />
-              ) : (
-                <LayoutList size={15} />
-              )}
-            </IconButton>
-          )}
-          <div className="w-px h-5 bg-border-subtle mx-1" />
-          <IconButton label="Previous" onClick={() => nav(-1)}>
-            <ChevronLeft size={16} />
-          </IconButton>
-          <button
-            type="button"
-            onClick={() => setCurrentDate(new Date())}
-            className="px-3 py-1 text-xs font-medium text-fg-muted hover:text-fg rounded-full transition-colors"
-          >
-            Today
-          </button>
-          <IconButton label="Next" onClick={() => nav(1)}>
-            <ChevronRight size={16} />
-          </IconButton>
-        </div>
-      </header>
+          <div className="flex items-center gap-2">
+            <ViewControls
+              view={view}
+              renderMode={renderMode}
+              toggleRenderMode={toggleRenderMode}
+            />
+            <div className="w-px h-5 bg-border-subtle mx-1" />
+            <NavControls nav={nav} setCurrentDate={setCurrentDate} />
+          </div>
+        </header>
+      )}
       <div
         ref={viewportRef}
         className="flex-1 min-h-0 overflow-auto p-4"
@@ -175,6 +169,64 @@ export function CalendarShell() {
         {view === "year" && <YearHeatmap />}
       </div>
     </div>
+  );
+}
+
+function NavControls({
+  nav,
+  setCurrentDate,
+}: {
+  nav: (d: -1 | 1) => void;
+  setCurrentDate: (d: Date) => void;
+}) {
+  return (
+    <>
+      <IconButton label="Previous" onClick={() => nav(-1)}>
+        <ChevronLeft size={16} />
+      </IconButton>
+      <button
+        type="button"
+        onClick={() => setCurrentDate(new Date())}
+        className="px-3 py-1 text-xs font-medium text-fg-muted hover:text-fg rounded-full transition-colors"
+      >
+        Today
+      </button>
+      <IconButton label="Next" onClick={() => nav(1)}>
+        <ChevronRight size={16} />
+      </IconButton>
+    </>
+  );
+}
+
+function ViewControls({
+  view,
+  renderMode,
+  toggleRenderMode,
+}: {
+  view: CalendarView;
+  renderMode: "pills" | "painted";
+  toggleRenderMode: () => void;
+}) {
+  return (
+    <>
+      <ViewSwitcher current={view} />
+      {view !== "year" && (
+        <IconButton
+          label={
+            renderMode === "pills"
+              ? "Switch to painted mode"
+              : "Switch to pills mode"
+          }
+          onClick={toggleRenderMode}
+        >
+          {renderMode === "pills" ? (
+            <Rows3 size={15} />
+          ) : (
+            <LayoutList size={15} />
+          )}
+        </IconButton>
+      )}
+    </>
   );
 }
 
