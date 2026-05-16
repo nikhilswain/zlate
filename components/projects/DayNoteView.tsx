@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight, Trash2, X } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useDayNote } from "@/hooks/useDayNote";
-import { MAX_DAY_NOTE_CHARS, upsertDayNote } from "@/lib/dayNotes";
+import {
+  MAX_DAY_NOTE_CHARS,
+  softDeleteDayNote,
+  upsertDayNote,
+} from "@/lib/dayNotes";
 import { readableTextColor } from "@/lib/contrast";
 import { isPastDay } from "@/lib/dateRange";
 import { CharCounter } from "./CharCounter";
@@ -43,10 +47,33 @@ export function DayNoteView({ project, dateKey, onClose }: Props) {
     }
   }, [note, project.id, dateKey]);
 
+  const textRef = useRef(text);
+  const persistedRef = useRef(note?.text ?? "");
+  useEffect(() => {
+    textRef.current = text;
+  });
+  useEffect(() => {
+    persistedRef.current = note?.text ?? "";
+  });
+
+  useEffect(() => {
+    return () => {
+      if (textRef.current.trim() !== persistedRef.current.trim()) {
+        void upsertDayNote(project.id, dateKey, textRef.current);
+      }
+    };
+  }, [project.id, dateKey]);
+
   async function commit() {
     const persisted = note?.text ?? "";
     if (text.trim() === persisted.trim()) return;
     await upsertDayNote(project.id, dateKey, text);
+  }
+
+  async function handleDelete() {
+    if (!note) return;
+    setText("");
+    await softDeleteDayNote(note.id);
   }
 
   const chipText = readableTextColor(project.baseColor);
@@ -119,6 +146,19 @@ export function DayNoteView({ project, dateKey, onClose }: Props) {
           Saves automatically when you click outside.
         </div>
       </div>
+
+      {note && (
+        <footer className="px-5 py-4 border-t border-border-subtle">
+          <button
+            type="button"
+            onClick={() => void handleDelete()}
+            className="flex items-center gap-2 text-xs text-fg-muted hover:text-red-400 transition-colors"
+          >
+            <Trash2 size={14} />
+            Delete this note
+          </button>
+        </footer>
+      )}
     </>
   );
 }
