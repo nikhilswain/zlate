@@ -6,6 +6,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { X } from "lucide-react";
 import { db } from "@/lib/db";
 import { useUIStore } from "@/store/useUIStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { softDeleteProject } from "@/lib/projects";
 import type { Project } from "@/types/project";
 
@@ -32,6 +33,7 @@ function ModalInner({ project }: { project: Project }) {
   const toggleFocus = useUIStore((s) => s.toggleFocus);
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
   const closeDayNote = useUIStore((s) => s.closeDayNote);
+  const isMobile = useIsMobile();
 
   const [confirm, setConfirm] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,12 +67,26 @@ function ModalInner({ project }: { project: Project }) {
       <motion.div
         role="dialog"
         aria-label="Confirm delete project"
-        initial={{ opacity: 0, scale: 0.96, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 8 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[400px] max-w-[90vw] bg-surface-elevated border border-border rounded-lg shadow-2xl"
+        initial={
+          isMobile ? { y: "100%" } : { opacity: 0, scale: 0.96, y: 8 }
+        }
+        animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+        exit={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.96, y: 8 }}
+        transition={{
+          duration: isMobile ? 0.28 : 0.2,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className={
+          isMobile
+            ? "fixed bottom-0 left-0 right-0 z-50 bg-surface-elevated border-t border-border rounded-t-2xl shadow-2xl"
+            : "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[400px] max-w-[90vw] bg-surface-elevated border border-border rounded-lg shadow-2xl"
+        }
       >
+        {isMobile && (
+          <div className="flex justify-center pt-2 pb-1 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-fg-subtle/40" />
+          </div>
+        )}
         <header className="flex items-center justify-between px-5 py-3.5 border-b border-border-subtle">
           <div className="flex items-center gap-2.5">
             <span
