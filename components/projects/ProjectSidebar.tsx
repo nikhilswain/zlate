@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -247,16 +248,16 @@ function RailLayout({
         </button>
       </header>
 
-      <div className="flex-1 w-full overflow-y-auto overflow-x-visible flex flex-col items-center gap-2 pt-1 pb-4">
+      <div className="flex-1 w-full overflow-y-auto overflow-x-visible flex flex-col items-center gap-3 pt-1 pb-4">
         {hasFocus && (
           <button
             type="button"
             onClick={clearFocus}
             aria-label="Clear focus"
-            className="size-6 rounded-full flex items-center justify-center text-fg-subtle hover:bg-surface-elevated hover:text-fg transition-colors mb-1"
+            className="size-9 rounded-full flex items-center justify-center text-fg-subtle border border-dashed border-border hover:border-fg-subtle hover:text-fg transition-colors"
             title="Clear focus"
           >
-            <X size={12} />
+            <X size={14} />
           </button>
         )}
         {projects.map((p) => {
@@ -292,11 +293,19 @@ function RailItem({
   onToggle: () => void;
 }) {
   const text = readableTextColor(project.baseColor);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
   return (
-    <div className="group relative w-full flex justify-center">
+    <div className="relative w-full flex justify-center">
       <button
         type="button"
         onClick={onToggle}
+        onMouseEnter={(e) =>
+          setRect(e.currentTarget.getBoundingClientRect())
+        }
+        onMouseLeave={() => setRect(null)}
+        onFocus={(e) => setRect(e.currentTarget.getBoundingClientRect())}
+        onBlur={() => setRect(null)}
         aria-pressed={isFocused}
         aria-label={project.name}
         className={
@@ -315,16 +324,44 @@ function RailItem({
           </span>
         ) : null}
       </button>
-      <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150">
-        <div className="bg-surface-elevated border border-border rounded-md px-2.5 py-1.5 shadow-lg whitespace-nowrap">
+      <AnimatePresence>
+        {rect && <RailTooltip key={project.id} project={project} rect={rect} />}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function RailTooltip({ project, rect }: { project: Project; rect: DOMRect }) {
+  const GAP = 14;
+  return (
+    <div
+      className="fixed z-50 pointer-events-none"
+      style={{
+        top: rect.top + rect.height / 2,
+        left: rect.right + GAP,
+        transform: "translateY(-50%)",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, x: -4, scale: 0.96 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: -4, scale: 0.96 }}
+        transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+        className="relative"
+      >
+        <div className="px-3 py-2 bg-surface-elevated border border-border rounded-md shadow-2xl whitespace-nowrap flex flex-col gap-1">
           <div className="text-[12px] font-medium text-fg leading-tight">
             {project.name}
           </div>
-          <div className="text-[10.5px] text-fg-subtle leading-tight mt-0.5">
+          <div className="text-[10.5px] text-fg-subtle leading-tight">
             {format(project.startDate, "MMM d")} – {format(project.endDate, "MMM d")}
           </div>
         </div>
-      </div>
+        <div
+          aria-hidden
+          className="absolute top-1/2 -translate-y-1/2 -left-1 size-2 rotate-45 bg-surface-elevated border-b border-l border-border"
+        />
+      </motion.div>
     </div>
   );
 }
