@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useUIStore } from "@/store/useUIStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { readableTextColor } from "@/lib/contrast";
 import { toDateKey } from "@/lib/dayNotes";
 import type { Project } from "@/types/project";
@@ -19,6 +20,7 @@ export function MultiProjectFill({ projects, isPast, day }: Props) {
   const openDayOverflowPopover = useUIStore(
     (s) => s.openDayOverflowPopover,
   );
+  const isMobile = useIsMobile();
 
   if (projects.length === 0) return null;
 
@@ -43,15 +45,25 @@ export function MultiProjectFill({ projects, isPast, day }: Props) {
   return (
     <div className="flex flex-col gap-0.5 mt-auto">
       {visible.map((p) => (
-        <Pill key={p.id} project={p} day={day} isPast={isPast} />
+        <Pill
+          key={p.id}
+          project={p}
+          day={day}
+          isPast={isPast}
+          isMobile={isMobile}
+        />
       ))}
       {extra > 0 && (
         <button
           type="button"
           onClick={handleOverflowClick}
-          className="text-[10.5px] font-medium text-fg-subtle hover:text-fg px-1.5 leading-tight text-left transition-colors"
+          className={
+            isMobile
+              ? "text-[10px] font-medium text-fg-subtle hover:text-fg leading-tight text-left transition-colors"
+              : "text-[10.5px] font-medium text-fg-subtle hover:text-fg px-1.5 leading-tight text-left transition-colors"
+          }
         >
-          +{extra} more
+          {isMobile ? `+${extra}` : `+${extra} more`}
         </button>
       )}
     </div>
@@ -62,10 +74,12 @@ function Pill({
   project,
   day,
   isPast,
+  isMobile,
 }: {
   project: Project;
   day: Date;
   isPast: boolean;
+  isMobile: boolean;
 }) {
   const openDayNote = useUIStore((s) => s.openDayNote);
   const bg = project.baseColor;
@@ -75,6 +89,28 @@ function Pill({
     (day.getTime() - project.startDate.getTime()) / 86_400_000,
   );
   const delay = Math.max(0, dayIndex) * STAGGER_PER_DAY;
+
+  if (isMobile) {
+    return (
+      <motion.button
+        type="button"
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: isPast ? 0.6 : 1, y: 0 }}
+        transition={{
+          delay,
+          duration: 0.32,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDayNote(project.id, toDateKey(day));
+        }}
+        aria-label={project.name}
+        className="rounded h-3 w-full transition-shadow duration-200 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3)]"
+        style={{ background: bg }}
+      />
+    );
+  }
 
   return (
     <motion.button
