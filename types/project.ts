@@ -32,5 +32,6 @@ export type Settings = {
   renderMode: RenderMode;
   view: CalendarView;
   weekStartsOn: WeekStartsOn;
+  sidebarCollapsed: boolean;
   updatedAt: Date;
 };

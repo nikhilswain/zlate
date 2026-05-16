@@ -7,5 +7,5 @@ import type { Settings } from "@/types/project";
 
 export function useSettings(): Settings {
   const persisted = useLiveQuery(() => db.settings.get(SETTINGS_ID));
-  return persisted ?? DEFAULT_SETTINGS;
+  return { ...DEFAULT_SETTINGS, ...(persisted ?? {}) };
 }

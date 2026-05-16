@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   renderMode: "pills",
   view: "month",
   weekStartsOn: 1,
+  sidebarCollapsed: false,
   updatedAt: new Date(0),
 };
 
