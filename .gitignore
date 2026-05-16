@@ -44,3 +44,12 @@ next-env.d.ts
 #others
 .claude
 docs
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+
+!.env.example
