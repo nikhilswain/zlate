@@ -18,7 +18,7 @@ import { readableTextColor } from "@/lib/contrast";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import type { Project } from "@/types/project";
 
-const EXPANDED_WIDTH = 260;
+const EXPANDED_WIDTH = 230;
 const RAIL_WIDTH = 56;
 
 export function ProjectSidebar() {
@@ -100,7 +100,7 @@ function ExpandedLayout({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.18 }}
-      className="flex flex-col h-full min-w-[260px]"
+      className="flex flex-col h-full min-w-[230px]"
     >
       <header className="flex items-center justify-between px-5 py-4">
         <span className="text-base font-medium tracking-tight text-fg">

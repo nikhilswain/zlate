@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   addDays,
   endOfYear,
@@ -31,7 +31,10 @@ const MONTH_LABELS = [
   "Dec",
 ];
 
-const CELL_SIZE = 20;
+const MIN_CELL_SIZE = 10;
+const MAX_CELL_SIZE = 22;
+const COLUMN_GAP = 4;
+const DAY_LABEL_COL_WIDTH = 28;
 const MAX_BANDS = 3;
 const STAGGER_PER_WEEK = 0.012;
 const TOOLTIP_GAP = 10;
@@ -50,6 +53,8 @@ export function YearHeatmap() {
   const { weekStartsOn } = useSettings();
   const projects = useProjects();
   const [hover, setHover] = useState<HoverState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [cellSize, setCellSize] = useState(MAX_CELL_SIZE);
 
   const { weeks, monthMarkers, year } = useMemo(() => {
     const y = currentDate.getFullYear();
@@ -81,6 +86,27 @@ export function YearHeatmap() {
     return { weeks: weeksOut, monthMarkers: markers, year: y };
   }, [currentDate, weekStartsOn]);
 
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const numWeeks = weeks.length;
+    function recompute(width: number) {
+      const available =
+        width - DAY_LABEL_COL_WIDTH - numWeeks * COLUMN_GAP;
+      const next = Math.floor(available / numWeeks);
+      setCellSize(
+        Math.max(MIN_CELL_SIZE, Math.min(MAX_CELL_SIZE, next)),
+      );
+    }
+    recompute(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? el.clientWidth;
+      recompute(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [weeks.length]);
+
   function projectsOn(day: Date): Project[] {
     const active = projects.filter((p) => projectActiveOnDay(p, day));
     if (focusedProjectIds.size === 0) return active;
@@ -91,12 +117,12 @@ export function YearHeatmap() {
     rowIdx % 2 === 1 ? format(addDays(weeks[0][0], rowIdx), "EEEEEE") : "";
 
   return (
-    <div className="relative w-fit">
+    <div ref={containerRef} className="w-full">
       <div
         className="grid gap-y-1"
         style={{
-          gridTemplateColumns: `28px repeat(${weeks.length}, ${CELL_SIZE}px)`,
-          columnGap: 4,
+          gridTemplateColumns: `${DAY_LABEL_COL_WIDTH}px repeat(${weeks.length}, ${cellSize}px)`,
+          columnGap: COLUMN_GAP,
         }}
       >
         <div />
@@ -170,7 +196,7 @@ export function YearHeatmap() {
                   }}
                   aria-label={ariaLabel}
                   className="rounded-[3px] overflow-hidden flex flex-col hover:ring-2 hover:ring-fg/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ width: CELL_SIZE, height: CELL_SIZE }}
+                  style={{ width: cellSize, height: cellSize }}
                 >
                   {hasProjects ? (
                     visible.map((p) => (
