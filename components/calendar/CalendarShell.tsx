@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   addDays,
   addMonths,
@@ -69,6 +69,46 @@ export function CalendarShell() {
     }
   }
 
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef(nav);
+  const viewModeRef = useRef(view);
+  useEffect(() => {
+    navRef.current = nav;
+    viewModeRef.current = view;
+  });
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const QUIET_MS = 200;
+    let gestureFired = false;
+    let quietTimer: number | null = null;
+    function onWheel(e: WheelEvent) {
+      const absX = Math.abs(e.deltaX);
+      const absY = Math.abs(e.deltaY);
+      const horizontalDominant = absX > absY;
+      if (viewModeRef.current === "year" && horizontalDominant) return;
+      e.preventDefault();
+      const delta = horizontalDominant ? e.deltaX : e.deltaY;
+      if (Math.abs(delta) < 1) return;
+
+      if (quietTimer !== null) window.clearTimeout(quietTimer);
+      quietTimer = window.setTimeout(() => {
+        gestureFired = false;
+        quietTimer = null;
+      }, QUIET_MS);
+
+      if (gestureFired) return;
+      gestureFired = true;
+      navRef.current(delta > 0 ? 1 : -1);
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      if (quietTimer !== null) window.clearTimeout(quietTimer);
+    };
+  }, []);
+
   function toggleRenderMode() {
     void updateSettings({
       renderMode: renderMode === "pills" ? "painted" : "pills",
@@ -115,7 +155,10 @@ export function CalendarShell() {
           </IconButton>
         </div>
       </header>
-      <div className="flex-1 min-h-0 overflow-auto p-4">
+      <div
+        ref={viewportRef}
+        className="flex-1 min-h-0 overflow-auto p-4"
+      >
         {view === "month" && <MonthView />}
         {view === "week" && <WeekView />}
         {view === "year" && <YearHeatmap />}

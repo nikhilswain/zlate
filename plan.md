@@ -141,6 +141,27 @@ Hover state on any clickable element: subtle brightness bump (~5%) and a 0.5px o
 - Click the same project again, click empty space, or press `Esc` to exit.
 - Transition: 250ms opacity ease-out. Don't animate other properties.
 
+## Calendar fits the viewport
+
+The calendar grid never scrolls vertically. Month and Week views fill the available height — rows distribute evenly via `grid-template-rows: repeat(N, minmax(0, 1fr))`. A 6-week month gets shorter rows than a 5-week month; both fit the same viewport. Cells clip overflowing content rather than expanding.
+
+Year heatmap is the one exception: it can be wider than the viewport on narrow screens and uses horizontal scroll as its primary panning affordance.
+
+## Navigation
+
+Three input paths, all mapped to the same `nav(direction)` helper:
+
+- **Keyboard.** `←` / `→` step one period (month / week / year) at a time.
+- **Toolbar.** Header buttons `‹` / `›` do the same. `Today` jumps to the current date.
+- **Wheel / trackpad.** Scrolling inside the calendar viewport advances the period — **down = next, up = previous**. Horizontal swipes also count, so `→` swipe = next.
+
+### Wheel-nav details
+
+- Listener is attached to the calendar viewport only, so the sidebar's project list, the detail panel's notes section, the day-overflow popover, and any other scrollable region keep their normal behaviour.
+- **Gesture-end debouncing.** Fire on the first event of a gesture, then ignore everything until the wheel goes quiet for 200 ms. Every incoming event resets that quiet timer, so a long trackpad swipe — including its 500–1000 ms inertia tail — counts as a single gesture no matter how long it lasts. Once the trackpad is genuinely silent for 200 ms, the next event starts a fresh gesture. A leading-edge time throttle wasn't enough: inertia events fire continuously every ~16 ms, so they squeeze through any short throttle and rack up multiple navs from one swipe.
+- **Year view splits axis-wise.** Vertical-dominant wheel events navigate the year (`|deltaY| ≥ |deltaX|`); horizontal-dominant events fall through to the browser's native horizontal scroll so users can still pan the heatmap.
+- Uses native `addEventListener('wheel', ..., { passive: false })` rather than React's synthetic `onWheel`, because we need `preventDefault()` to stop the page from scrolling — and React's synthetic wheel listeners are forced-passive.
+
 ## Daily notes
 
 A short-form log of what happened on a specific day for a specific project. Project-level fields (name, color, icon, description, dates) describe the project as a whole; daily notes capture the day-by-day texture inside it.
