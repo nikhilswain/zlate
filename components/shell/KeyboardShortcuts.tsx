@@ -26,6 +26,7 @@ export function KeyboardShortcuts() {
   const selectedDayNote = useUIStore((s) => s.selectedDayNote);
   const focusedProjectIds = useUIStore((s) => s.focusedProjectIds);
   const projectIdPendingDelete = useUIStore((s) => s.projectIdPendingDelete);
+  const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
   const closeCreatePopover = useUIStore((s) => s.closeCreatePopover);
   const closeDayOverflowPopover = useUIStore(
     (s) => s.closeDayOverflowPopover,
@@ -34,6 +35,7 @@ export function KeyboardShortcuts() {
   const closeDayNote = useUIStore((s) => s.closeDayNote);
   const clearFocus = useUIStore((s) => s.clearFocus);
   const cancelDeleteProject = useUIStore((s) => s.cancelDeleteProject);
+  const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar);
 
   useEffect(() => {
     function isEditableTarget(t: EventTarget | null): boolean {
@@ -99,6 +101,8 @@ export function KeyboardShortcuts() {
             closeDayNote();
           } else if (selectedProjectId) {
             setSelectedProjectId(null);
+          } else if (mobileSidebarOpen) {
+            closeMobileSidebar();
           } else if (focusedProjectIds.size > 0) {
             clearFocus();
           }
@@ -117,6 +121,7 @@ export function KeyboardShortcuts() {
     selectedDayNote,
     focusedProjectIds,
     projectIdPendingDelete,
+    mobileSidebarOpen,
     setCurrentDate,
     closeCreatePopover,
     closeDayOverflowPopover,
@@ -124,6 +129,7 @@ export function KeyboardShortcuts() {
     closeDayNote,
     clearFocus,
     cancelDeleteProject,
+    closeMobileSidebar,
   ]);
 
   return null;

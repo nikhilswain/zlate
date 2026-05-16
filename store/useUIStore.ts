@@ -32,6 +32,9 @@ type UIState = {
   projectIdPendingDelete: string | null;
   askDeleteProject: (id: string) => void;
   cancelDeleteProject: () => void;
+  mobileSidebarOpen: boolean;
+  openMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -84,4 +87,7 @@ export const useUIStore = create<UIState>((set) => ({
   projectIdPendingDelete: null,
   askDeleteProject: (id) => set({ projectIdPendingDelete: id }),
   cancelDeleteProject: () => set({ projectIdPendingDelete: null }),
+  mobileSidebarOpen: false,
+  openMobileSidebar: () => set({ mobileSidebarOpen: true }),
+  closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
 }));

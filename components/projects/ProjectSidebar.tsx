@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useSettings } from "@/hooks/useSettings";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useUIStore } from "@/store/useUIStore";
 import { updateSettings } from "@/lib/settings";
 import { readableTextColor } from "@/lib/contrast";
@@ -29,11 +30,54 @@ export function ProjectSidebar() {
   const clearFocus = useUIStore((s) => s.clearFocus);
   const askDeleteProject = useUIStore((s) => s.askDeleteProject);
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const isMobile = useIsMobile();
+  const mobileOpen = useUIStore((s) => s.mobileSidebarOpen);
+  const closeMobile = useUIStore((s) => s.closeMobileSidebar);
 
   const hasFocus = focused.size > 0;
 
   function toggleCollapsed() {
     void updateSettings({ sidebarCollapsed: !sidebarCollapsed });
+  }
+
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={closeMobile}
+              className="fixed inset-0 z-40 bg-overlay backdrop-blur-sm"
+            />
+            <motion.aside
+              key="mobile-drawer"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed top-0 left-0 z-40 h-full w-[280px] bg-surface border-r border-border-subtle overflow-hidden"
+            >
+              <ExpandedLayout
+                projects={projects}
+                focused={focused}
+                hasFocus={hasFocus}
+                toggleFocus={toggleFocus}
+                clearFocus={clearFocus}
+                askDeleteProject={askDeleteProject}
+                setSelectedProjectId={setSelectedProjectId}
+                onClose={closeMobile}
+                afterRowAction={closeMobile}
+              />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    );
   }
 
   return (
@@ -81,7 +125,9 @@ type ExpandedProps = {
   clearFocus: () => void;
   askDeleteProject: (id: string) => void;
   setSelectedProjectId: (id: string | null) => void;
-  onCollapse: () => void;
+  onCollapse?: () => void;
+  onClose?: () => void;
+  afterRowAction?: () => void;
 };
 
 function ExpandedLayout({
@@ -93,7 +139,12 @@ function ExpandedLayout({
   askDeleteProject,
   setSelectedProjectId,
   onCollapse,
+  onClose,
+  afterRowAction,
 }: ExpandedProps) {
+  function runAfter() {
+    if (afterRowAction) afterRowAction();
+  }
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -107,14 +158,26 @@ function ExpandedLayout({
           Zlate
         </span>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={onCollapse}
-            aria-label="Collapse sidebar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-fg-muted hover:bg-surface-elevated hover:text-fg transition-colors"
-          >
-            <ChevronLeft size={16} />
-          </button>
+          {onCollapse && (
+            <button
+              type="button"
+              onClick={onCollapse}
+              aria-label="Collapse sidebar"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-fg-muted hover:bg-surface-elevated hover:text-fg transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close sidebar"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-fg-muted hover:bg-surface-elevated hover:text-fg transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
           <ThemeToggle />
         </div>
       </header>
@@ -127,7 +190,10 @@ function ExpandedLayout({
           {hasFocus && (
             <button
               type="button"
-              onClick={clearFocus}
+              onClick={() => {
+                clearFocus();
+                runAfter();
+              }}
               className="text-[10.5px] text-fg-subtle hover:text-fg transition-colors"
             >
               Clear
@@ -157,7 +223,10 @@ function ExpandedLayout({
                 >
                   <button
                     type="button"
-                    onClick={() => toggleFocus(p.id)}
+                    onClick={() => {
+                      toggleFocus(p.id);
+                      runAfter();
+                    }}
                     aria-pressed={isFocused}
                     className="flex-1 min-w-0 flex items-center gap-2.5 px-2 py-2 text-left rounded-md"
                   >
@@ -185,6 +254,7 @@ function ExpandedLayout({
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedProjectId(p.id);
+                      runAfter();
                     }}
                     aria-label={`Project settings for ${p.name}`}
                     className="px-1.5 flex items-center text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
@@ -196,6 +266,7 @@ function ExpandedLayout({
                     onClick={(e) => {
                       e.stopPropagation();
                       askDeleteProject(p.id);
+                      runAfter();
                     }}
                     aria-label={`Delete ${p.name}`}
                     className="pl-1.5 pr-2 flex items-center text-fg-subtle hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"

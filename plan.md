@@ -210,6 +210,48 @@ Deliberately skipped. There is no always-on dot or marker on the calendar grid i
 
 Clicking a pill or band — which previously opened the detail panel in Project mode — now opens it in **Day mode** for that pill's project and that day. Project mode is reachable from the chip inside Day mode, or directly from the sidebar gear icon.
 
+## Mobile responsiveness
+
+Below `768px` everything reflows. Above is the existing desktop layout. Single breakpoint, no in-between "tablet" tier — Tailwind's `md:` prefix is the boundary, gated in code by a small `useIsMobile()` hook (`matchMedia('(max-width: 767px)')`).
+
+### Shell
+
+- **Sidebar becomes an off-canvas drawer.** Hidden by default. A hamburger button in the header opens it. Drawer slides from the left at ~280 px wide over a full-screen backdrop. Tap backdrop or press Esc to close. No rail mode on mobile — the 56 px rail still consumes real estate that phones can't spare.
+- **Header reflows to two rows.**
+  - Row 1: `[☰] Title` on the left, `[‹ Today ›]` on the right
+  - Row 2: `[Month | Week | Year]` segmented control + render mode toggle (still hidden in Year view)
+
+### Calendar — pills compaction
+
+In Pills mode on mobile, pill rendering drops the icon **and** the project name. Each pill is a thin coloured bar only — identity comes from colour alone. The `+N more` overflow button shortens to `+N`. Painted mode is unchanged: full-cell bands already work at any cell width.
+
+### Calendar — view-specific behaviour
+
+- **Month view**: cells fit naturally in 7 narrow columns at mobile width. Date number stays at 11 px; cell padding reduced. Pills use the bar-only treatment above. Painted mode is unchanged.
+- **Week view**: keeps 7 horizontal columns (no agenda re-layout). Pills get the same bar-only treatment. Vertical scroll inside each cell already handles overflow on tall content.
+- **Year heatmap**: **rotated 90° on mobile.** The desktop grid is `weeks × 7 days` running left-to-right (Jan → Dec horizontally). On mobile the grid is **transposed**: 7 day columns at the top (Mon → Sun running across), weeks stacked vertically, month labels in a sticky left strip. Phones are taller than wide — letting the year flow down the page is the natural fit. Scrolls vertically (53 weeks × ~40 px cell ≈ 2.1 K px). Implemented as a parallel render path inside `YearHeatmap`, not a CSS `rotate` — text and click areas stay normal-axis.
+- **Heatmap tooltip on mobile**: skipped. Tap already navigates to that month, which is the primary affordance; a tap-and-hold gesture is too undiscoverable to bother with.
+
+### Overlays
+
+All become bottom sheets or full-screen modals on mobile:
+
+- **Project detail panel**: slides up from the bottom instead of from the right. Full-width, ~75% viewport height max, swipe-down or backdrop-tap to dismiss. Day mode and Project mode reuse the same shell.
+- **Create project popover**: full-screen modal. Anchored positioning makes no sense at phone width.
+- **Day overflow popover**: bottom sheet (same pattern as detail panel).
+- **Delete modal**: gets `max-w-[90vw]` so the fixed 400 px width doesn't overflow narrow viewports.
+
+### Interactions
+
+- **Wheel-to-nav** (mouse/trackpad) is desktop-only. On mobile, a horizontal swipe on the calendar grid navigates. Reuse the gesture-end debouncing model but listen on `touchstart` / `touchmove` / `touchend`. Vertical swipes still scroll the page / the heatmap.
+- **Hover-only affordances become always-visible.** Sidebar drawer rows show gear and trash icons by default (no `opacity-0 group-hover:opacity-100`). The rail's per-circle hover tooltip doesn't apply — sidebar is a drawer, not a rail.
+
+### Touch targets
+
+- Icon buttons: minimum 36 × 36 px tap area (via padding when the icon itself is smaller).
+- Sidebar drawer rows: `py-3` → ~44 px tall.
+- Pills get `min-height: 24px` on mobile — tight but workable. Painted bands are tap-friendly regardless.
+
 ## Empty state
 
 First open: empty calendar, no modals, no tutorials, no sample data. A small hint floats near the top of the calendar:

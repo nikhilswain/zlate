@@ -15,10 +15,12 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutList,
+  Menu,
   Rows3,
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useSettings } from "@/hooks/useSettings";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { updateSettings } from "@/lib/settings";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -34,6 +36,8 @@ const VIEW_OPTIONS: { id: CalendarView; label: string }[] = [
 export function CalendarShell() {
   const currentDate = useUIStore((s) => s.currentDate);
   const setCurrentDate = useUIStore((s) => s.setCurrentDate);
+  const openMobileSidebar = useUIStore((s) => s.openMobileSidebar);
+  const isMobile = useIsMobile();
   const { view, renderMode, weekStartsOn } = useSettings();
 
   const heading = useMemo(() => {
@@ -118,9 +122,16 @@ export function CalendarShell() {
   return (
     <div className="flex flex-1 flex-col min-w-0">
       <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
-        <h2 className="text-lg font-medium text-fg whitespace-nowrap">
-          {heading}
-        </h2>
+        <div className="flex items-center gap-2 min-w-0">
+          {isMobile && (
+            <IconButton label="Open sidebar" onClick={openMobileSidebar}>
+              <Menu size={16} />
+            </IconButton>
+          )}
+          <h2 className="text-lg font-medium text-fg whitespace-nowrap">
+            {heading}
+          </h2>
+        </div>
         <div className="flex items-center gap-2">
           <ViewSwitcher current={view} />
           {view !== "year" && (
