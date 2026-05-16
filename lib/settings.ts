@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: "dark",
   renderMode: "pills",
   view: "month",
-  weekStartsOn: 1,
+  weekStartsOn: 0,
   sidebarCollapsed: false,
   updatedAt: new Date(0),
 };
