@@ -142,9 +142,17 @@ function ExpandedLayout({
   onClose,
   afterRowAction,
 }: ExpandedProps) {
+  const isMobile = useIsMobile();
   function runAfter() {
     if (afterRowAction) afterRowAction();
   }
+
+  const actionIconClass = isMobile
+    ? "flex items-center text-fg-subtle hover:text-fg transition-colors"
+    : "flex items-center text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity";
+  const trashIconClass = isMobile
+    ? "flex items-center text-fg-subtle hover:text-red-400 transition-colors"
+    : "flex items-center text-fg-subtle hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity";
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -257,9 +265,11 @@ function ExpandedLayout({
                       runAfter();
                     }}
                     aria-label={`Project settings for ${p.name}`}
-                    className="px-1.5 flex items-center text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className={
+                      (isMobile ? "px-2.5 " : "px-1.5 ") + actionIconClass
+                    }
                   >
-                    <Settings2 size={13} />
+                    <Settings2 size={isMobile ? 15 : 13} />
                   </button>
                   <button
                     type="button"
@@ -269,9 +279,12 @@ function ExpandedLayout({
                       runAfter();
                     }}
                     aria-label={`Delete ${p.name}`}
-                    className="pl-1.5 pr-2 flex items-center text-fg-subtle hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className={
+                      (isMobile ? "pl-2.5 pr-3 " : "pl-1.5 pr-2 ") +
+                      trashIconClass
+                    }
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={isMobile ? 15 : 13} />
                   </button>
                 </li>
               );
