@@ -83,7 +83,7 @@ export function CalendarShell() {
 
   useEffect(() => {
     const el = viewportRef.current;
-    if (!el) return;
+    if (!el || isMobile) return;
     const QUIET_MS = 200;
     let gestureFired = false;
     let quietTimer: number | null = null;
@@ -111,7 +111,52 @@ export function CalendarShell() {
       el.removeEventListener("wheel", onWheel);
       if (quietTimer !== null) window.clearTimeout(quietTimer);
     };
-  }, []);
+  }, [isMobile]);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el || !isMobile) return;
+    const HORIZONTAL_THRESHOLD = 50;
+    const MAX_DURATION = 600;
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let tracking = false;
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length !== 1) {
+        tracking = false;
+        return;
+      }
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startTime = performance.now();
+      tracking = true;
+    }
+    function onTouchEnd(e: TouchEvent) {
+      if (!tracking) return;
+      tracking = false;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      const dt = performance.now() - startTime;
+      if (dt > MAX_DURATION) return;
+      if (Math.abs(dx) < HORIZONTAL_THRESHOLD) return;
+      if (Math.abs(dx) <= Math.abs(dy)) return;
+      navRef.current(dx < 0 ? 1 : -1);
+    }
+    function onTouchCancel() {
+      tracking = false;
+    }
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchCancel, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchCancel);
+    };
+  }, [isMobile]);
 
   function toggleRenderMode() {
     void updateSettings({
