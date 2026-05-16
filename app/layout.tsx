@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeApplier } from "@/components/shell/ThemeApplier";
-import { SeedOnEmpty } from "@/components/shell/SeedOnEmpty";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +25,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeApplier />
-        <SeedOnEmpty />
         {children}
       </body>
     </html>
