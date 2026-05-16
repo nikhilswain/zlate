@@ -8,6 +8,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useProjects } from "@/hooks/useProjects";
 import { projectActiveOnDay, isPastDay } from "@/lib/dateRange";
 import { readableTextColor } from "@/lib/contrast";
+import { toDateKey } from "@/lib/dayNotes";
 
 const POPOVER_WIDTH = 240;
 const ESTIMATED_HEIGHT = 280;
@@ -17,7 +18,7 @@ const ANCHOR_GAP = 8;
 export function DayOverflowPopover() {
   const anchor = useUIStore((s) => s.dayOverflowPopover);
   const close = useUIStore((s) => s.closeDayOverflowPopover);
-  const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const openDayNote = useUIStore((s) => s.openDayNote);
   const focused = useUIStore((s) => s.focusedProjectIds);
   const allProjects = useProjects();
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -105,7 +106,7 @@ export function DayOverflowPopover() {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => setSelectedProjectId(p.id)}
+                  onClick={() => openDayNote(p.id, toDateKey(anchor.day))}
                   className="w-full flex items-center gap-2 px-1.5 h-7 rounded-md text-left transition-shadow hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]"
                   style={{
                     background: p.baseColor,

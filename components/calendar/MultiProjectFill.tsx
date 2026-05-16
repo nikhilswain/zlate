@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useUIStore } from "@/store/useUIStore";
 import { readableTextColor } from "@/lib/contrast";
+import { toDateKey } from "@/lib/dayNotes";
 import type { Project } from "@/types/project";
 
 type Props = {
@@ -66,7 +67,7 @@ function Pill({
   day: Date;
   isPast: boolean;
 }) {
-  const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const openDayNote = useUIStore((s) => s.openDayNote);
   const bg = project.baseColor;
   const text = readableTextColor(bg);
 
@@ -87,7 +88,7 @@ function Pill({
       }}
       onClick={(e) => {
         e.stopPropagation();
-        setSelectedProjectId(project.id);
+        openDayNote(project.id, toDateKey(day));
       }}
       className="flex items-center gap-1.5 px-1.5 rounded h-5 overflow-hidden w-full text-left transition-shadow duration-200 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3)]"
       style={{ background: bg, color: text }}

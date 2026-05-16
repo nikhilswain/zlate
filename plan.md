@@ -141,6 +141,54 @@ Hover state on any clickable element: subtle brightness bump (~5%) and a 0.5px o
 - Click the same project again, click empty space, or press `Esc` to exit.
 - Transition: 250ms opacity ease-out. Don't animate other properties.
 
+## Daily notes
+
+A short-form log of what happened on a specific day for a specific project. Project-level fields (name, color, icon, description, dates) describe the project as a whole; daily notes capture the day-by-day texture inside it.
+
+### Data model
+
+```tsx
+type DayNote = {
+  id: string             // UUID
+  projectId: string
+  dateKey: string        // YYYY-MM-DD, locale-independent
+  text: string           // ≤ 280 chars
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date | null // soft-delete; reserved for future sync
+}
+```
+
+- New Dexie table `dayNotes` with a compound `[projectId+dateKey]` index so we can look up "the note for project X on day Y" cheaply.
+- One note per `(projectId, dateKey)` pair, enforced in code (upsert by compound key).
+- Notes are editable for **any day** — past, today, or future. No date restrictions.
+
+### Detail panel — two modes
+
+A single right-side panel renders one of two layouts based on which entry point fired:
+
+- **Day mode** — opened by clicking a pill or band in the calendar, or by clicking a note row in Project mode.
+  - Header: large date title (`Saturday · May 16`) with the project shown below as a small colored chip. Clicking the chip switches to Project mode.
+  - Body: a single autoFocused `textarea` with placeholder `What did you work on?` and a reused `CharCounter` (max 280). Commits to Dexie on blur (consistent with the rest of the panel).
+- **Project mode** — opened by clicking the gear icon in a sidebar row.
+  - Header: project name + color swatch (no date).
+  - Body: existing fields (name, icon, color, dates, description, delete).
+  - New `Notes (N)` section after the existing fields — list of every day-note for this project, latest first, each row showing the date and a one-line snippet. Clicking a row switches the panel to Day mode for that date.
+
+Visual differentiation is **structural**, not chromatic: date-first header for Day mode, project-first header for Project mode. No background tinting.
+
+### Sidebar — gear icon
+
+The per-row affordance becomes `[focus toggle | gear | trash]`. The gear opens Project mode for that project; the trash and focus toggle keep their current behaviour. Both gear and trash are revealed on row hover.
+
+### Calendar indicator
+
+Deliberately skipped. There is no always-on dot or marker on the calendar grid indicating "this day has a note". Discoverability happens through the Notes list inside Project mode. If we want a global indicator later, it'll be a single toggle in settings rather than per-project configuration.
+
+### Click rules update
+
+Clicking a pill or band — which previously opened the detail panel in Project mode — now opens it in **Day mode** for that pill's project and that day. Project mode is reachable from the chip inside Day mode, or directly from the sidebar gear icon.
+
 ## Empty state
 
 First open: empty calendar, no modals, no tutorials, no sample data. A small hint floats near the top of the calendar:
@@ -173,16 +221,19 @@ components/
   MultiProjectFill.tsx           // pure visual: takes Project[] + mode + isPast
   ProjectSidebar.tsx             // list, focus mode triggers
   CreateProjectPopover.tsx       // anchored to clicked cell
-  ProjectDetailPanel.tsx         // slides in on pill/region click
+  ProjectDetailPanel.tsx         // panel shell; switches between Day mode and Project mode
   FocusModeOverlay.tsx
 lib/
-  db.ts                          // Dexie instance + schema
+  db.ts                          // Dexie instance + schema (projects, dayNotes, settings)
   projects.ts                    // CRUD helpers: createProject, updateProject, softDeleteProject
+  dayNotes.ts                    // upsertDayNote, softDeleteDayNote, MAX_DAY_NOTE_CHARS
   colorTones.ts                  // HSL math for light/dark derivation
   dateRange.ts                   // range overlap, isPast, dominant-project
 hooks/
   useProjects.ts                 // wraps useLiveQuery, filters out soft-deleted
   useProjectsOnDay.ts            // returns Project[] active on a given date
+  useDayNote.ts                  // single note for (projectId, dateKey)
+  useProjectDayNotes.ts          // all notes for a project, latest first
 store/
   useUIStore.ts                  // zustand: selectedProjectId, view, renderMode (mirrored to localStorage)
 ```
@@ -213,4 +264,4 @@ When a tradeoff arises, the higher-priority item wins.
 
 ## Explicitly out of scope
 
-Daily notes, completion toggles, progress percentages, blockers, missed-day warnings, productivity analytics, streaks, particle effects, sound, drag-to-paint, multi-select, recurring projects, tags, search, undo/redo, sharing, exports. Do not add these even if they seem like obvious next steps. Ship the smaller thing first.
+Completion toggles, progress percentages, blockers, missed-day warnings, productivity analytics, streaks, particle effects, sound, drag-to-paint, multi-select, recurring projects, tags, search, undo/redo, sharing, exports. Do not add these even if they seem like obvious next steps. Ship the smaller thing first.

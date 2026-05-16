@@ -32,7 +32,7 @@ export function CreateProjectPopover() {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const [name, setName] = useState("");
-  const [color, setColor] = useState(PALETTE[5]);
+  const [color, setColor] = useState<string>(PALETTE[5]);
   const [icon, setIcon] = useState<string | undefined>(undefined);
   const [presetId, setPresetId] = useState<RangePreset>("7");
   const [customStart, setCustomStart] = useState<string>("");

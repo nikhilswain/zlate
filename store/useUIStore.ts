@@ -10,12 +10,16 @@ export type AnchorRect = {
 };
 
 export type PopoverAnchor = { day: Date; rect: AnchorRect };
+export type DayNoteSelection = { projectId: string; dateKey: string };
 
 type UIState = {
   currentDate: Date;
   setCurrentDate: (d: Date) => void;
   selectedProjectId: string | null;
   setSelectedProjectId: (id: string | null) => void;
+  selectedDayNote: DayNoteSelection | null;
+  openDayNote: (projectId: string, dateKey: string) => void;
+  closeDayNote: () => void;
   popoverAnchor: PopoverAnchor | null;
   openCreatePopover: (day: Date, rect: AnchorRect) => void;
   closeCreatePopover: () => void;
@@ -37,14 +41,25 @@ export const useUIStore = create<UIState>((set) => ({
   setSelectedProjectId: (id) =>
     set({
       selectedProjectId: id,
+      selectedDayNote: null,
       popoverAnchor: null,
       dayOverflowPopover: null,
     }),
+  selectedDayNote: null,
+  openDayNote: (projectId, dateKey) =>
+    set({
+      selectedDayNote: { projectId, dateKey },
+      selectedProjectId: null,
+      popoverAnchor: null,
+      dayOverflowPopover: null,
+    }),
+  closeDayNote: () => set({ selectedDayNote: null }),
   popoverAnchor: null,
   openCreatePopover: (day, rect) =>
     set({
       popoverAnchor: { day, rect },
       selectedProjectId: null,
+      selectedDayNote: null,
       dayOverflowPopover: null,
     }),
   closeCreatePopover: () => set({ popoverAnchor: null }),
@@ -54,6 +69,7 @@ export const useUIStore = create<UIState>((set) => ({
       dayOverflowPopover: { day, rect },
       popoverAnchor: null,
       selectedProjectId: null,
+      selectedDayNote: null,
     }),
   closeDayOverflowPopover: () => set({ dayOverflowPopover: null }),
   focusedProjectIds: new Set(),

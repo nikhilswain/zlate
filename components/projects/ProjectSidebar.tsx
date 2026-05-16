@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
+import { Settings2, Trash2 } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useUIStore } from "@/store/useUIStore";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
@@ -12,6 +12,7 @@ export function ProjectSidebar() {
   const toggleFocus = useUIStore((s) => s.toggleFocus);
   const clearFocus = useUIStore((s) => s.clearFocus);
   const askDeleteProject = useUIStore((s) => s.askDeleteProject);
+  const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
 
   const hasFocus = focused.size > 0;
 
@@ -89,10 +90,21 @@ export function ProjectSidebar() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setSelectedProjectId(p.id);
+                    }}
+                    aria-label={`Project settings for ${p.name}`}
+                    className="px-1.5 flex items-center text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                  >
+                    <Settings2 size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       askDeleteProject(p.id);
                     }}
                     aria-label={`Delete ${p.name}`}
-                    className="px-2 flex items-center text-fg-subtle hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className="pl-1.5 pr-2 flex items-center text-fg-subtle hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                   >
                     <Trash2 size={13} />
                   </button>

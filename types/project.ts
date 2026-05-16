@@ -11,6 +11,16 @@ export type Project = {
   deletedAt: Date | null;
 };
 
+export type DayNote = {
+  id: string;
+  projectId: string;
+  dateKey: string;
+  text: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+};
+
 export type RenderMode = "pills" | "painted";
 export type CalendarView = "month" | "week" | "year";
 export type Theme = "dark" | "light";

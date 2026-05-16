@@ -14,9 +14,10 @@ export function ProjectDeleteModal() {
   const focused = useUIStore((s) => s.focusedProjectIds);
   const toggleFocus = useUIStore((s) => s.toggleFocus);
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const closeDayNote = useUIStore((s) => s.closeDayNote);
 
   const project = useLiveQuery(
-    () => (pendingId ? db.projects.get(pendingId) : null),
+    () => (pendingId ? db.projects.get(pendingId) : undefined),
     [pendingId],
   );
   const [confirm, setConfirm] = useState("");
@@ -36,6 +37,7 @@ export function ProjectDeleteModal() {
     if (!canDelete || !project) return;
     if (focused.has(project.id)) toggleFocus(project.id);
     setSelectedProjectId(null);
+    closeDayNote();
     await softDeleteProject(project.id);
     cancel();
   }

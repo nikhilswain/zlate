@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useUIStore } from "@/store/useUIStore";
+import { toDateKey } from "@/lib/dayNotes";
 import type { Project } from "@/types/project";
 
 type Props = {
@@ -68,7 +69,7 @@ function Band({
   day: Date;
   isPast: boolean;
 }) {
-  const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const openDayNote = useUIStore((s) => s.openDayNote);
 
   const dayIndex = Math.floor(
     (day.getTime() - project.startDate.getTime()) / 86_400_000,
@@ -87,7 +88,7 @@ function Band({
       }}
       onClick={(e) => {
         e.stopPropagation();
-        setSelectedProjectId(project.id);
+        openDayNote(project.id, toDateKey(day));
       }}
       aria-label={project.name}
       className="block w-full flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)]"

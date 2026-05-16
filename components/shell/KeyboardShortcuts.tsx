@@ -23,6 +23,7 @@ export function KeyboardShortcuts() {
   const popoverAnchor = useUIStore((s) => s.popoverAnchor);
   const dayOverflowPopover = useUIStore((s) => s.dayOverflowPopover);
   const selectedProjectId = useUIStore((s) => s.selectedProjectId);
+  const selectedDayNote = useUIStore((s) => s.selectedDayNote);
   const focusedProjectIds = useUIStore((s) => s.focusedProjectIds);
   const projectIdPendingDelete = useUIStore((s) => s.projectIdPendingDelete);
   const closeCreatePopover = useUIStore((s) => s.closeCreatePopover);
@@ -30,6 +31,7 @@ export function KeyboardShortcuts() {
     (s) => s.closeDayOverflowPopover,
   );
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
+  const closeDayNote = useUIStore((s) => s.closeDayNote);
   const clearFocus = useUIStore((s) => s.clearFocus);
   const cancelDeleteProject = useUIStore((s) => s.cancelDeleteProject);
 
@@ -93,6 +95,8 @@ export function KeyboardShortcuts() {
             closeCreatePopover();
           } else if (dayOverflowPopover) {
             closeDayOverflowPopover();
+          } else if (selectedDayNote) {
+            closeDayNote();
           } else if (selectedProjectId) {
             setSelectedProjectId(null);
           } else if (focusedProjectIds.size > 0) {
@@ -110,12 +114,14 @@ export function KeyboardShortcuts() {
     popoverAnchor,
     dayOverflowPopover,
     selectedProjectId,
+    selectedDayNote,
     focusedProjectIds,
     projectIdPendingDelete,
     setCurrentDate,
     closeCreatePopover,
     closeDayOverflowPopover,
     setSelectedProjectId,
+    closeDayNote,
     clearFocus,
     cancelDeleteProject,
   ]);

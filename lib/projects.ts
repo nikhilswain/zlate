@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { softDeleteDayNotesForProject } from "./dayNotes";
 import type { Project } from "@/types/project";
 
 type CreateInput = {
@@ -71,4 +72,5 @@ export async function softDeleteProject(id: string): Promise<void> {
     deletedAt: new Date(),
     updatedAt: new Date(),
   });
+  await softDeleteDayNotesForProject(id);
 }
