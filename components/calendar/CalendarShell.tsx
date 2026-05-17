@@ -43,12 +43,26 @@ export function CalendarShell() {
   const { view, renderMode, weekStartsOn } = useSettings();
   const reduced = usePrefersReducedMotion();
   const prevViewRef = useRef<CalendarView>(view);
-  const VIEW_ORDER: CalendarView[] = ["month", "week", "year"];
-  const direction =
-    VIEW_ORDER.indexOf(view) - VIEW_ORDER.indexOf(prevViewRef.current);
+  const prevDateRef = useRef<Date>(currentDate);
+  const viewChanged = prevViewRef.current !== view;
+  const dateDelta = currentDate.getTime() - prevDateRef.current.getTime();
+  const isFade = viewChanged || reduced;
+  const slideX = dateDelta >= 0 ? 24 : -24;
   useEffect(() => {
     prevViewRef.current = view;
-  }, [view]);
+    prevDateRef.current = currentDate;
+  }, [view, currentDate]);
+
+  const periodKey = useMemo(() => {
+    if (view === "month") {
+      return `month:${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+    }
+    if (view === "week") {
+      const start = startOfWeek(currentDate, { weekStartsOn });
+      return `week:${start.getTime()}`;
+    }
+    return `year:${currentDate.getFullYear()}`;
+  }, [view, currentDate, weekStartsOn]);
 
   const heading = useMemo(() => {
     if (view === "month") return format(currentDate, "MMMM yyyy");
@@ -221,17 +235,17 @@ export function CalendarShell() {
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={view}
+            key={periodKey}
             initial={
-              reduced
+              isFade
                 ? { opacity: 0 }
-                : { opacity: 0, x: direction >= 0 ? 24 : -24 }
+                : { opacity: 0, x: slideX }
             }
             animate={{ opacity: 1, x: 0 }}
             exit={
-              reduced
+              isFade
                 ? { opacity: 0 }
-                : { opacity: 0, x: direction >= 0 ? -24 : 24 }
+                : { opacity: 0, x: -slideX }
             }
             transition={{ duration: reduced ? 0.12 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="h-full"
