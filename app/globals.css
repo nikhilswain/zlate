@@ -66,3 +66,200 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
 }
+
+/* react-day-picker — Zlate skin
+   Uses .rdp-zlate .rdp-root to beat the library's .rdp-root specificity.
+   Dynamic project color is injected via --zl-accent / --zl-accent-soft / --zl-accent-text on the wrapper. */
+.rdp-zlate .rdp-root {
+  --rdp-accent-color: var(--zl-accent);
+  --rdp-accent-background-color: var(--zl-accent-soft);
+  --rdp-range_middle-background-color: var(--zl-accent-soft);
+  --rdp-range_middle-color: var(--fg);
+  --rdp-range_start-date-background-color: var(--zl-accent);
+  --rdp-range_end-date-background-color: var(--zl-accent);
+  --rdp-range_start-color: var(--zl-accent-text);
+  --rdp-range_end-color: var(--zl-accent-text);
+  --rdp-today-color: var(--fg);
+  --rdp-day-height: 34px;
+  --rdp-day-width: 100%;
+  --rdp-day_button-height: 30px;
+  --rdp-day_button-width: 30px;
+  --rdp-day_button-border-radius: 999px;
+  --rdp-day_button-border: 2px solid transparent;
+  --rdp-nav-height: 2rem;
+  --rdp-nav_button-height: 1.75rem;
+  --rdp-nav_button-width: 1.75rem;
+  --rdp-weekday-opacity: 1;
+  --rdp-animation_duration: 220ms;
+  width: 100%;
+  margin: 0;
+  font-family: inherit;
+}
+
+.rdp-zlate .rdp-months {
+  width: 100%;
+}
+
+.rdp-zlate .rdp-month {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.rdp-zlate .rdp-month_grid {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.rdp-zlate .rdp-month_caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--rdp-nav-height);
+}
+
+.rdp-zlate .rdp-caption_label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.rdp-zlate .rdp-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--rdp-nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.rdp-zlate .rdp-button_previous,
+.rdp-zlate .rdp-button_next {
+  pointer-events: auto;
+  color: var(--fg-muted);
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 160ms, color 160ms;
+}
+
+.rdp-zlate .rdp-button_previous:hover:not(:disabled),
+.rdp-zlate .rdp-button_next:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.rdp-zlate .rdp-chevron {
+  fill: currentColor;
+  width: 14px;
+  height: 14px;
+}
+
+.rdp-zlate .rdp-weekdays {
+  margin-top: 6px;
+}
+
+.rdp-zlate .rdp-weekday {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-subtle);
+  padding: 4px 0;
+  opacity: 1;
+}
+
+.rdp-zlate .rdp-day {
+  position: relative;
+  text-align: center;
+  width: auto;
+  height: var(--rdp-day-height);
+}
+
+.rdp-zlate .rdp-day_button {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 160ms, color 160ms;
+}
+
+.rdp-zlate .rdp-day_button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+
+.rdp-zlate .rdp-day_button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Today (when not selected): subtle accent dot under the number */
+.rdp-zlate .rdp-today:not(.rdp-selected) .rdp-day_button {
+  font-weight: 600;
+}
+
+.rdp-zlate .rdp-today:not(.rdp-selected) .rdp-day_button::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--zl-accent);
+}
+
+/* Outside days */
+.rdp-zlate .rdp-outside .rdp-day_button {
+  color: var(--fg-subtle);
+  opacity: 0.35;
+}
+
+/* Disabled */
+.rdp-zlate .rdp-disabled .rdp-day_button {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* Selected single + range endpoints — solid accent pill */
+.rdp-zlate .rdp-selected .rdp-day_button {
+  background: var(--zl-accent);
+  color: var(--zl-accent-text);
+  font-weight: 500;
+}
+
+.rdp-zlate .rdp-selected .rdp-day_button:hover:not(:disabled) {
+  background: var(--zl-accent);
+  filter: brightness(1.05);
+}
+
+/* Range middle — soft accent fills the full cell to form the band */
+.rdp-zlate .rdp-range_middle {
+  background: var(--zl-accent-soft);
+}
+
+.rdp-zlate .rdp-range_middle .rdp-day_button {
+  background: transparent;
+  color: var(--fg);
+}
+
+/* Range endpoints — half-cell soft gradient so the band visually connects to the pill */
+.rdp-zlate .rdp-range_start {
+  background: linear-gradient(to right, transparent 50%, var(--zl-accent-soft) 50%);
+}
+
+.rdp-zlate .rdp-range_end {
+  background: linear-gradient(to right, var(--zl-accent-soft) 50%, transparent 50%);
+}
+
+/* Single-day range — no gradient */
+.rdp-zlate .rdp-range_start.rdp-range_end {
+  background: transparent;
+}
