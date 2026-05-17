@@ -166,45 +166,45 @@ export function CalendarShell() {
 
   return (
     <div className="flex flex-1 flex-col min-w-0">
-      {isMobile ? (
-        <header className="flex flex-col gap-2 px-4 py-3 border-b border-border-subtle">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <IconButton label="Open sidebar" onClick={openMobileSidebar}>
-                <Menu size={16} />
-              </IconButton>
-              <h2 className="text-lg font-medium text-fg whitespace-nowrap truncate">
-                {heading}
-              </h2>
-            </div>
-            <div className="flex items-center gap-0.5 shrink-0">
-              <NavControls nav={nav} setCurrentDate={setCurrentDate} />
-            </div>
+      {/* Mobile header: two rows */}
+      <header className="flex md:hidden flex-col gap-2 px-4 py-3 border-b border-border-subtle">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <IconButton label="Open sidebar" onClick={openMobileSidebar}>
+              <Menu size={16} />
+            </IconButton>
+            <h2 className="text-lg font-medium text-fg whitespace-nowrap truncate">
+              {heading}
+            </h2>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <ViewControls
-              view={view}
-              renderMode={renderMode}
-              toggleRenderMode={toggleRenderMode}
-            />
-          </div>
-        </header>
-      ) : (
-        <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
-          <h2 className="text-lg font-medium text-fg whitespace-nowrap">
-            {heading}
-          </h2>
-          <div className="flex items-center gap-2">
-            <ViewControls
-              view={view}
-              renderMode={renderMode}
-              toggleRenderMode={toggleRenderMode}
-            />
-            <div className="w-px h-5 bg-border-subtle mx-1" />
+          <div className="flex items-center gap-0.5 shrink-0">
             <NavControls nav={nav} setCurrentDate={setCurrentDate} />
           </div>
-        </header>
-      )}
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <ViewControls
+            view={view}
+            renderMode={renderMode}
+            toggleRenderMode={toggleRenderMode}
+          />
+        </div>
+      </header>
+
+      {/* Desktop header: single row */}
+      <header className="hidden md:flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
+        <h2 className="text-lg font-medium text-fg whitespace-nowrap">
+          {heading}
+        </h2>
+        <div className="flex items-center gap-2">
+          <ViewControls
+            view={view}
+            renderMode={renderMode}
+            toggleRenderMode={toggleRenderMode}
+          />
+          <div className="w-px h-5 bg-border-subtle mx-1" />
+          <NavControls nav={nav} setCurrentDate={setCurrentDate} />
+        </div>
+      </header>
       <div
         ref={viewportRef}
         className="flex-1 min-h-0 overflow-auto p-4"
