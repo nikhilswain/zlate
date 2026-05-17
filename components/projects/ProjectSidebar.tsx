@@ -30,7 +30,6 @@ export function ProjectSidebar() {
   const clearFocus = useUIStore((s) => s.clearFocus);
   const askDeleteProject = useUIStore((s) => s.askDeleteProject);
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
-  const isMobile = useIsMobile();
   const mobileOpen = useUIStore((s) => s.mobileSidebarOpen);
   const closeMobile = useUIStore((s) => s.closeMobileSidebar);
 
@@ -40,80 +39,82 @@ export function ProjectSidebar() {
     void updateSettings({ sidebarCollapsed: !sidebarCollapsed });
   }
 
-  if (isMobile) {
-    return (
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              key="mobile-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={closeMobile}
-              className="fixed inset-0 z-40 bg-overlay backdrop-blur-sm"
-            />
-            <motion.aside
-              key="mobile-drawer"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed top-0 left-0 z-40 h-full w-[280px] bg-surface border-r border-border-subtle overflow-hidden"
-            >
-              <ExpandedLayout
-                projects={projects}
-                focused={focused}
-                hasFocus={hasFocus}
-                toggleFocus={toggleFocus}
-                clearFocus={clearFocus}
-                askDeleteProject={askDeleteProject}
-                setSelectedProjectId={setSelectedProjectId}
-                onClose={closeMobile}
-                afterRowAction={closeMobile}
-              />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    );
-  }
-
   return (
-    <aside
-      className="shrink-0 flex flex-col border-r border-border-subtle bg-surface overflow-hidden"
-      style={{
-        width: sidebarCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH,
-        transition: "width 320ms cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        {sidebarCollapsed ? (
-          <RailLayout
-            key="rail"
-            projects={projects}
-            focused={focused}
-            hasFocus={hasFocus}
-            toggleFocus={toggleFocus}
-            clearFocus={clearFocus}
-            onExpand={toggleCollapsed}
-          />
-        ) : (
-          <ExpandedLayout
-            key="expanded"
-            projects={projects}
-            focused={focused}
-            hasFocus={hasFocus}
-            toggleFocus={toggleFocus}
-            clearFocus={clearFocus}
-            askDeleteProject={askDeleteProject}
-            setSelectedProjectId={setSelectedProjectId}
-            onCollapse={toggleCollapsed}
-          />
-        )}
-      </AnimatePresence>
-    </aside>
+    <>
+      {/* Desktop: rail or expanded — hidden below md */}
+      <aside
+        className="hidden md:flex shrink-0 flex-col border-r border-border-subtle bg-surface overflow-hidden"
+        style={{
+          width: sidebarCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH,
+          transition: "width 320ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {sidebarCollapsed ? (
+            <RailLayout
+              key="rail"
+              projects={projects}
+              focused={focused}
+              hasFocus={hasFocus}
+              toggleFocus={toggleFocus}
+              clearFocus={clearFocus}
+              onExpand={toggleCollapsed}
+            />
+          ) : (
+            <ExpandedLayout
+              key="expanded"
+              projects={projects}
+              focused={focused}
+              hasFocus={hasFocus}
+              toggleFocus={toggleFocus}
+              clearFocus={clearFocus}
+              askDeleteProject={askDeleteProject}
+              setSelectedProjectId={setSelectedProjectId}
+              onCollapse={toggleCollapsed}
+            />
+          )}
+        </AnimatePresence>
+      </aside>
+
+      {/* Mobile: off-canvas drawer — hidden at md+ */}
+      <div className="md:hidden contents">
+        <AnimatePresence>
+          {mobileOpen && (
+            <>
+              <motion.div
+                key="mobile-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={closeMobile}
+                className="fixed inset-0 z-40 bg-overlay backdrop-blur-sm"
+              />
+              <motion.aside
+                key="mobile-drawer"
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed top-0 left-0 z-40 h-full w-[280px] bg-surface border-r border-border-subtle overflow-hidden"
+              >
+                <ExpandedLayout
+                  projects={projects}
+                  focused={focused}
+                  hasFocus={hasFocus}
+                  toggleFocus={toggleFocus}
+                  clearFocus={clearFocus}
+                  askDeleteProject={askDeleteProject}
+                  setSelectedProjectId={setSelectedProjectId}
+                  onClose={closeMobile}
+                  afterRowAction={closeMobile}
+                />
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }
 
