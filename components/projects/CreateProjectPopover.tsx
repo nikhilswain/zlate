@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { addDays, format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
@@ -57,6 +57,18 @@ function PopoverContent({ anchor }: { anchor: PopoverAnchor }) {
   const [customEnd, setCustomEnd] = useState<string>(
     format(addDays(anchor.day, 6), "yyyy-MM-dd"),
   );
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (isMobile) return;
+    const el = popoverRef.current;
+    if (!el) return;
+    const update = () => setMeasuredHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isMobile]);
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -91,17 +103,18 @@ function PopoverContent({ anchor }: { anchor: PopoverAnchor }) {
   const position = useMemo(() => {
     const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    const height = measuredHeight ?? ESTIMATED_HEIGHT;
     let left = anchor.rect.left + anchor.rect.width + ANCHOR_GAP;
     if (left + POPOVER_WIDTH + VIEWPORT_PAD > vw) {
       left = anchor.rect.left - POPOVER_WIDTH - ANCHOR_GAP;
     }
     if (left < VIEWPORT_PAD) left = VIEWPORT_PAD;
     let top = anchor.rect.top;
-    if (top + ESTIMATED_HEIGHT + VIEWPORT_PAD > vh) {
-      top = Math.max(VIEWPORT_PAD, vh - ESTIMATED_HEIGHT - VIEWPORT_PAD);
+    if (top + height + VIEWPORT_PAD > vh) {
+      top = Math.max(VIEWPORT_PAD, vh - height - VIEWPORT_PAD);
     }
     return { top, left };
-  }, [anchor]);
+  }, [anchor, measuredHeight]);
 
   async function handleCreate() {
     if (!name.trim()) return;
