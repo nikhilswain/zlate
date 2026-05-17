@@ -160,7 +160,7 @@ export function YearHeatmap() {
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: finalOpacity, scale: 1 }}
         transition={{
-          delay: weekIdx * STAGGER_PER_WEEK,
+          delay: Math.min(0.6, weekIdx * STAGGER_PER_WEEK),
           duration: 0.32,
           ease: [0.16, 1, 0.3, 1],
         }}

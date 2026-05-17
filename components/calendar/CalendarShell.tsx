@@ -18,9 +18,11 @@ import {
   Menu,
   Rows3,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useUIStore } from "@/store/useUIStore";
 import { useSettings } from "@/hooks/useSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { updateSettings } from "@/lib/settings";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -39,6 +41,14 @@ export function CalendarShell() {
   const openMobileSidebar = useUIStore((s) => s.openMobileSidebar);
   const isMobile = useIsMobile();
   const { view, renderMode, weekStartsOn } = useSettings();
+  const reduced = usePrefersReducedMotion();
+  const prevViewRef = useRef<CalendarView>(view);
+  const VIEW_ORDER: CalendarView[] = ["month", "week", "year"];
+  const direction =
+    VIEW_ORDER.indexOf(view) - VIEW_ORDER.indexOf(prevViewRef.current);
+  useEffect(() => {
+    prevViewRef.current = view;
+  }, [view]);
 
   const heading = useMemo(() => {
     if (view === "month") return format(currentDate, "MMMM yyyy");
@@ -207,11 +217,30 @@ export function CalendarShell() {
       </header>
       <div
         ref={viewportRef}
-        className="flex-1 min-h-0 overflow-auto p-4"
+        className="flex-1 min-h-0 overflow-auto p-4 relative"
       >
-        {view === "month" && <MonthView />}
-        {view === "week" && <WeekView />}
-        {view === "year" && <YearHeatmap />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={view}
+            initial={
+              reduced
+                ? { opacity: 0 }
+                : { opacity: 0, x: direction >= 0 ? 24 : -24 }
+            }
+            animate={{ opacity: 1, x: 0 }}
+            exit={
+              reduced
+                ? { opacity: 0 }
+                : { opacity: 0, x: direction >= 0 ? -24 : 24 }
+            }
+            transition={{ duration: reduced ? 0.12 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="h-full"
+          >
+            {view === "month" && <MonthView />}
+            {view === "week" && <WeekView />}
+            {view === "year" && <YearHeatmap />}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
