@@ -17,12 +17,24 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const bootScript = `
+(function(){try{
+  var d=document.documentElement;
+  var mq=window.matchMedia('(max-width: 767px)');
+  d.dataset.vp=mq.matches?'mobile':'desktop';
+  var t=localStorage.getItem('zlate.theme');
+  if(t==='light'||t==='dark') d.dataset.theme=t;
+}catch(e){}})();
+`.trim();
   return (
     <html
       lang="en"
       suppressHydrationWarning
       className={`${inter.variable} h-full`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeApplier />
         {children}
