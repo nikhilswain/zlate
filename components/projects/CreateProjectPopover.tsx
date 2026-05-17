@@ -8,6 +8,7 @@ import { useUIStore, type PopoverAnchor } from "@/store/useUIStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { createProject } from "@/lib/projects";
 import { PROJECT_EMOJIS, PROJECT_PALETTE } from "@/lib/palette";
+import { ProjectRangeCalendar } from "./ProjectRangeCalendar";
 
 const PALETTE = PROJECT_PALETTE;
 const EMOJIS = PROJECT_EMOJIS;
@@ -264,18 +265,21 @@ function PopoverContent({ anchor }: { anchor: PopoverAnchor }) {
               ))}
             </div>
             {presetId === "custom" && (
-              <div className="flex gap-2 mt-2">
-                <input
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                  className="flex-1 bg-bg border border-border rounded px-2 py-1 text-xs text-fg"
-                />
-                <input
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                  className="flex-1 bg-bg border border-border rounded px-2 py-1 text-xs text-fg"
+              <div className="mt-2">
+                <ProjectRangeCalendar
+                  value={{
+                    from: customStart ? new Date(`${customStart}T00:00:00`) : undefined,
+                    to: customEnd ? new Date(`${customEnd}T00:00:00`) : undefined,
+                  }}
+                  onChange={(range) => {
+                    if (range?.from) {
+                      setCustomStart(format(range.from, "yyyy-MM-dd"));
+                    }
+                    if (range?.to) {
+                      setCustomEnd(format(range.to, "yyyy-MM-dd"));
+                    }
+                  }}
+                  color={color}
                 />
               </div>
             )}

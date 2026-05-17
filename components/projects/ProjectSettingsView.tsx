@@ -8,6 +8,7 @@ import { MAX_DESCRIPTION_CHARS, updateProject } from "@/lib/projects";
 import { PROJECT_EMOJIS, PROJECT_PALETTE } from "@/lib/palette";
 import { useProjectDayNotes } from "@/hooks/useProjectDayNotes";
 import { CharCounter } from "./CharCounter";
+import { ProjectRangeCalendar } from "./ProjectRangeCalendar";
 import type { Project } from "@/types/project";
 
 const PALETTE = PROJECT_PALETTE;
@@ -177,22 +178,20 @@ export function ProjectSettingsView({ project, onClose }: Props) {
         </Field>
 
         <Field label="Range">
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={startStr}
-              onChange={(e) => setStartStr(e.target.value)}
-              onBlur={() => void commitChange({ startDate, endDate })}
-              className="flex-1 bg-bg border border-border rounded px-2 py-1.5 text-xs text-fg"
-            />
-            <input
-              type="date"
-              value={endStr}
-              onChange={(e) => setEndStr(e.target.value)}
-              onBlur={() => void commitChange({ startDate, endDate })}
-              className="flex-1 bg-bg border border-border rounded px-2 py-1.5 text-xs text-fg"
-            />
-          </div>
+          <ProjectRangeCalendar
+            value={{ from: startDate, to: endDate }}
+            onChange={(range) => {
+              if (range?.from) setStartStr(format(range.from, "yyyy-MM-dd"));
+              if (range?.to) setEndStr(format(range.to, "yyyy-MM-dd"));
+              // Commit immediately when both endpoints are set
+              if (range?.from && range?.to) {
+                const s = range.from <= range.to ? range.from : range.to;
+                const e = range.from <= range.to ? range.to : range.from;
+                void commitChange({ startDate: s, endDate: e });
+              }
+            }}
+            color={color}
+          />
           <div className="mt-2 text-[11px] text-fg-subtle">
             {format(startDate, "EEE, MMM d")} → {format(endDate, "EEE, MMM d")}
           </div>
