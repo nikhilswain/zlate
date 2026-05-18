@@ -37,33 +37,14 @@ export async function POST(request: Request) {
     const code = rawCode.trim().toUpperCase().replace(/[\s-]/g, "");
 
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("pairing_codes")
-      .select("account_id, expires_at, used_at")
-      .eq("code", code)
-      .maybeSingle();
-
-    if (error) {
-      return Response.json(
-        { error: "Lookup failed.", detail: error.message },
-        { status: 500 },
-      );
-    }
-    if (!data) {
-      return Response.json({ error: "Invalid or expired code." }, { status: 404 });
-    }
-    if (data.used_at) {
-      return Response.json({ error: "Code already used." }, { status: 410 });
-    }
-    if (new Date(data.expires_at).getTime() <= Date.now()) {
-      return Response.json({ error: "Invalid or expired code." }, { status: 410 });
-    }
-
-    const { error: updateError } = await supabase
+    const { data: redeemed, error: updateError } = await supabase
       .from("pairing_codes")
       .update({ used_at: new Date().toISOString() })
       .eq("code", code)
-      .is("used_at", null);
+      .is("used_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .select("account_id")
+      .maybeSingle();
 
     if (updateError) {
       return Response.json(
@@ -71,8 +52,11 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+    if (!redeemed) {
+      return Response.json({ error: "Invalid or expired code." }, { status: 410 });
+    }
 
-    return Response.json({ accountId: data.account_id });
+    return Response.json({ accountId: redeemed.account_id });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return Response.json({ error: message }, { status: 500 });

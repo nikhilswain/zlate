@@ -9,6 +9,10 @@ import type {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function isValidIsoDate(s: unknown): s is string {
+  return typeof s === "string" && !isNaN(new Date(s).getTime());
+}
+
 function getBearerAccountId(request: Request): string | null {
   const auth = request.headers.get("authorization");
   if (!auth || !auth.startsWith("Bearer ")) return null;
@@ -59,6 +63,33 @@ export async function POST(request: Request) {
       body = (await request.json()) as PushBody;
     } catch {
       return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+    }
+
+    if (Array.isArray(body.projects)) {
+      for (const p of body.projects) {
+        if (!isValidIsoDate(p?.updated_at)) {
+          return Response.json(
+            { error: "Invalid project updated_at." },
+            { status: 400 },
+          );
+        }
+      }
+    }
+    if (Array.isArray(body.dayNotes)) {
+      for (const n of body.dayNotes) {
+        if (!isValidIsoDate(n?.updated_at)) {
+          return Response.json(
+            { error: "Invalid day note updated_at." },
+            { status: 400 },
+          );
+        }
+      }
+    }
+    if (body.settings && !isValidIsoDate(body.settings.updated_at)) {
+      return Response.json(
+        { error: "Invalid settings updated_at." },
+        { status: 400 },
+      );
     }
 
     const counters: ApplyCounters = {

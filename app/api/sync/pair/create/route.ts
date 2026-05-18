@@ -10,9 +10,11 @@ const CODE_LENGTH = 6;
 const MAX_INSERT_ATTEMPTS = 3;
 
 function generateCode(): string {
+  const bytes = new Uint8Array(CODE_LENGTH);
+  crypto.getRandomValues(bytes);
   let out = "";
   for (let i = 0; i < CODE_LENGTH; i++) {
-    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+    out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
   }
   return out;
 }
