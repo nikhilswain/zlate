@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.3.0 — Mobile first-paint, calendar transitions, range picker
+
+### Mobile first-paint (flicker fix)
+
+- Inline boot script in `<head>` sets `data-vp` (`mobile` / `desktop`) and `data-theme` on `<html>` **before** any React code runs. Eliminates the desktop-flash-then-mobile-render visible on mobile cold loads — by the time the first paint happens, the document already knows what viewport it's in and what theme it should be.
+- `useIsMobile()` rewritten to seed its first client snapshot from the `data-vp` attribute rather than calling `matchMedia` directly. Keeps SSR and CSR in sync; no one-frame post-hydration repaint.
+- `ThemeApplier` now mirrors the active theme to `localStorage` so the boot script can read it on the next page load (the source of truth is still Dexie).
+- **Sidebar and calendar header migrated from JS-branched layouts to CSS-driven responsive layouts.** Both desktop and mobile markup render to the DOM; visibility flips at the `md` breakpoint via `hidden md:flex` / `md:hidden contents`. Previously the `if (isMobile) return <Mobile/>` early-return ran after hydration, so the wrong layout flashed first.
+- **Pills markup unified into one tree** with responsive Tailwind utilities (icons/labels conditionally rendered via `md:` classes) instead of two separate component branches. Stagger ceiling lowered to **0.5s** so heavily-loaded days don't have animations dragging on.
+
+### Calendar transitions
+
+- New `usePrefersReducedMotion()` hook — mirrors the `useIsMobile` pattern (subscribes to the media query via `useSyncExternalStore`). Honored throughout the animation system; when reduced motion is on, transitions degrade to a plain fade.
+- **Period navigation (Prev / Next month, week, year) now slides + fades.** Direction is computed from the date delta sign — forward slides left, backward slides right.
+- **View-mode switching (Month ↔ Week ↔ Year) stays as a pure crossfade.** The layouts are too structurally different for a slide to feel natural; the fade reads as "swap modes," not "scrub through time."
+- Composite `periodKey` (`month:2026-04`, `week:<timestamp>`, `year:2026`) drives `AnimatePresence mode="wait"`. Same period, no animation; different period, animate. Avoids the previous behavior where every internal re-render triggered a fade.
+- Year heatmap's per-week stagger is now capped at **0.6s total** (`Math.min(0.6, weekIdx * STAGGER_PER_WEEK)`) so a full year doesn't take 8 seconds to paint in.
+
+### Range calendar picker
+
+- Native `<input type="date">` fields in `CreateProjectPopover` (Custom range branch) and `ProjectSettingsView` (Range field) replaced with a custom-skinned **react-day-picker** v10 calendar that matches the dark-by-default aesthetic of the rest of the app.
+- Preset chips (`Today only` / `7d` / `14d` / `30d` / `Custom`) preserved in the create popover; the calendar only renders when `Custom` is selected.
+- **Live-bound to the project's chosen color.** `--zl-accent` (solid), `--zl-accent-soft` (20% alpha via `color-mix(in srgb, color 20%, transparent)`), and `--zl-accent-text` (WCAG-contrast pick via `readableTextColor`) are injected as CSS vars on the wrapper. Picking a new color updates the selection band and endpoint pills immediately while the calendar is open.
+- Skin scoped via `.rdp-zlate .rdp-root` (specificity 0,2,0) so it beats the library's default `.rdp-root` declarations. Inline `style` on a parent wrapper does **not** win — the library's `.rdp-root { --rdp-accent-color: blue }` has higher specificity than a style attribute on an ancestor, so the extra class is required to override.
+- Range middle paints the full cell with the soft accent. Endpoints render as solid pills with a **half-cell gradient bridge** (`linear-gradient(to right, transparent 50%, var(--zl-accent-soft) 50%)` on `range_start`, mirrored on `range_end`) so the band visually connects to the pill without an ugly seam.
+- "Today" (when not selected) gets a small accent dot under the number via `::after`, instead of the library's default outline ring.
+- Calendar fills its container width edge-to-edge. First fix attempt added `table-layout: fixed` on the grid but didn't move the needle — the real cause was `.rdp-months` being `display: flex` so `width: 100%` on `.rdp-month` is ignored along the main axis. Real fix: `flex: 1 1 100%; min-width: 0` on `.rdp-month`.
+- Default color swatch on Create flipped from `PALETTE[5]` (green) to `PALETTE[0]` so a fresh project always starts on the first color in the palette.
+- `ProjectSettingsView` commits the new range immediately when both endpoints are set — no save button, consistent with how color and icon already commit on select.
+
+### Bug fixes
+
+- `ProjectRangeCalendar` initial implementation had a stray `div` token before the closing `/>` (TS2322); cleaned up during the skin rebuild.
+
 ## 0.2.0 — Daily notes, sidebar collapse, mobile
 
 ### Daily notes
