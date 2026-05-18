@@ -115,15 +115,27 @@ export async function getSyncStatus(): Promise<{
   return { accountId: meta.accountId, lastSyncedAt: meta.lastSyncedAt };
 }
 
+// Tolerate up to this much clock skew between devices and the server. Both
+// push (which rows to include) and pull (which rows the server returns) use
+// a cursor shifted back by this amount. The LWW merge cheaply discards the
+// extra rows. Without this, a row stamped slightly before `lastSyncedAt` due
+// to a slow device clock would be silently skipped forever.
+const CLOCK_SKEW_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function syncNow(): Promise<SyncResult> {
   const meta = await getSyncMeta();
   if (!meta.accountId) {
     throw new SyncError("Set up sync first.");
   }
 
-  // ── Push: send everything updated since last sync ──
+  // ── Push: send everything updated since (last sync − skew buffer) ──
   const since = meta.lastSyncedAt;
-  const sinceMs = since ? new Date(since).getTime() : 0;
+  const sinceMs = since
+    ? new Date(since).getTime() - CLOCK_SKEW_BUFFER_MS
+    : 0;
+  const bufferedSince = since
+    ? new Date(new Date(since).getTime() - CLOCK_SKEW_BUFFER_MS).toISOString()
+    : null;
 
   const [allProjects, allNotes, currentSettings] = await Promise.all([
     db.projects.toArray(),
@@ -160,9 +172,9 @@ export async function syncNow(): Promise<SyncResult> {
     applied: { projects: number; dayNotes: number; settingsUpdated: boolean };
   };
 
-  // ── Pull: get everything changed on the server since last sync ──
-  const pullUrl = since
-    ? `/api/sync/pull?since=${encodeURIComponent(since)}`
+  // ── Pull: get everything changed on the server since (last sync − skew buffer) ──
+  const pullUrl = bufferedSince
+    ? `/api/sync/pull?since=${encodeURIComponent(bufferedSince)}`
     : "/api/sync/pull";
   const pullResponse = await fetch(pullUrl, {
     method: "GET",
