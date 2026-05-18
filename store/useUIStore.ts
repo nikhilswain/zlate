@@ -35,6 +35,12 @@ type UIState = {
   mobileSidebarOpen: boolean;
   openMobileSidebar: () => void;
   closeMobileSidebar: () => void;
+  settingsOpen: boolean;
+  openSettings: () => void;
+  closeSettings: () => void;
+  wipeAllOpen: boolean;
+  openWipeAll: () => void;
+  cancelWipeAll: () => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -47,6 +53,7 @@ export const useUIStore = create<UIState>((set) => ({
       selectedDayNote: null,
       popoverAnchor: null,
       dayOverflowPopover: null,
+      settingsOpen: false,
     }),
   selectedDayNote: null,
   openDayNote: (projectId, dateKey) =>
@@ -55,6 +62,7 @@ export const useUIStore = create<UIState>((set) => ({
       selectedProjectId: null,
       popoverAnchor: null,
       dayOverflowPopover: null,
+      settingsOpen: false,
     }),
   closeDayNote: () => set({ selectedDayNote: null }),
   popoverAnchor: null,
@@ -64,6 +72,7 @@ export const useUIStore = create<UIState>((set) => ({
       selectedProjectId: null,
       selectedDayNote: null,
       dayOverflowPopover: null,
+      settingsOpen: false,
     }),
   closeCreatePopover: () => set({ popoverAnchor: null }),
   dayOverflowPopover: null,
@@ -73,6 +82,7 @@ export const useUIStore = create<UIState>((set) => ({
       popoverAnchor: null,
       selectedProjectId: null,
       selectedDayNote: null,
+      settingsOpen: false,
     }),
   closeDayOverflowPopover: () => set({ dayOverflowPopover: null }),
   focusedProjectIds: new Set(),
@@ -90,4 +100,17 @@ export const useUIStore = create<UIState>((set) => ({
   mobileSidebarOpen: false,
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
+  settingsOpen: false,
+  openSettings: () =>
+    set({
+      settingsOpen: true,
+      selectedProjectId: null,
+      selectedDayNote: null,
+      popoverAnchor: null,
+      dayOverflowPopover: null,
+    }),
+  closeSettings: () => set({ settingsOpen: false, wipeAllOpen: false }),
+  wipeAllOpen: false,
+  openWipeAll: () => set({ wipeAllOpen: true }),
+  cancelWipeAll: () => set({ wipeAllOpen: false }),
 }));
