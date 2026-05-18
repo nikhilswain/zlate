@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.1 — Sync polish (Phase 1 followups)
+
+### Sync
+
+- **Service-role grants + RLS** added to `supabase/schema.sql`. Supabase's new API key system doesn't always auto-grant table privileges to `service_role`, which was blocking `POST /api/sync/register` with `permission denied for table accounts`. Schema now explicitly grants CRUD on all five tables and enables RLS with no policies — defense in depth: any non-service_role caller is denied even if a publishable key ever leaks.
+- **Auto-sync after `Set up sync` and after pairing.** Best-effort sync runs immediately after `registerAccount()` or `redeemPairingCode()` succeeds. Calendar fills with data without requiring a manual Sync now tap. Failures are logged but don't block the pair/setup itself.
+- **Host code view auto-dismisses on consume.** New `GET /api/sync/pair/status?code=…` endpoint plus a 7-second poll from `SyncSection` while the code is visible. When the other device redeems → host dismisses the code screen and flashes "Device paired!" for 3 seconds.
+- **Clock-skew buffer (5 min)** applied to both push and pull cursors. Previously, if a client's clock was slightly behind the server's, recently-created rows could fall in the gap (`updatedAt < lastSyncedAt`) and be silently skipped forever. Push filter and pull `?since=` query now subtract 5 minutes from the cursor; LWW merge cheaply discards the extra rows. Offline edits are unaffected — the cursor only advances on successful sync, so they stay within the push window regardless of duration.
+- **API error responses sanitized for production.** New `lib/apiError.ts` helper logs full error details to `console.error` (visible in `npm run dev` and Cloudflare observability logs) while returning a clean user-facing message. In dev the raw error message is still appended for debugging.
+
+### Bug fixes
+
+- **`next/script` for the boot script in `app/layout.tsx`** to satisfy React 19's strict-mode warning about raw `<script>` tags inside the component tree. Uses `strategy="beforeInteractive"` so it still runs before hydration AND before first paint, preserving the mobile first-paint flicker fix from 0.3.0.
+- **`PairingCodeModal.onSuccess` prop removed.** Was being passed from `AppShell` (a server component) to the modal (a client component), which is a Next.js boundary violation. The modal already closes itself on success and `SyncSection` re-renders via `useLiveQuery` on syncMeta — the prop was always a no-op.
+
 ## 0.5.0 — Cross-device sync (Phase 1)
 
 ### Sync

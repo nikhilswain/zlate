@@ -325,32 +325,36 @@ Frontend-only. No backend, no auth, no API calls. The data layer is built to be 
 
 When a tradeoff arises, the higher-priority item wins.
 
-## Future plans
+## Roadmap
 
-Things deferred for later, not built yet. These don't change the current scope — they're a parking lot for things worth designing properly when the time comes.
+Status of major post-0.2.0 milestones. Final spec lives in `docs/superpowers/specs/`; user-visible changes land in `CHANGELOG.md`.
 
-### Sync — Supabase + thin Next.js backend, no auth
+### ✅ Settings UI (shipped in 0.4.0)
 
-The data model already shipped is sync-ready (UUIDs generated client-side, `updatedAt` on every row, `deletedAt` tombstones instead of hard deletes). What's missing is the actual transport.
+Right-side panel reached from the sidebar footer. Preferences (theme + week starts on), Data (export / import / wipe), Danger zone. See `docs/superpowers/specs/2026-05-18-settings-panel-design.md`.
 
-**Sketch:**
+### ✅ Sync — Phase 1 (shipped in 0.5.0, polished in 0.5.1)
 
-- **Storage** — Supabase Postgres tables mirroring the Dexie schema: `projects`, `day_notes`, `settings`. Same column names, same UUIDs.
-- **Backend** — thin Next.js API routes (`app/api/sync/push/route.ts`, `app/api/sync/pull/route.ts`) that wrap the Supabase service-role client. The frontend never sees the Supabase key directly; the API route is the only thing that talks to Postgres.
-- **No auth (v1)** — single-tenant or shared-key for personal use. Auth (Supabase Auth, magic links, whatever) is a separate later step.
-- **Push** — client batches rows whose `updatedAt > lastSyncedAt` and POSTs them. Server upserts by `id`. Server stamps a server-side `updatedAt` on accept so client clocks don't matter.
-- **Pull** — client GETs rows where `updatedAt > lastSyncedAt`. Server returns the delta.
-- **Conflict resolution** — last-write-wins by `updatedAt`. Good enough for single-user-multi-device, which is the realistic use case.
-- **Tombstones** — `deletedAt` rows sync like any other row. Server-side cron sweeps tombstones older than ~30 days.
-- **Triggering** — sync on app focus, periodic interval (~30 s), and a manual "sync now" affordance. Each device tracks its own `lastSyncedAt` in the Dexie settings row.
-- **Backwards compat** — no schema migration needed when sync turns on. Existing local-only DBs just start syncing from "now".
+Cross-device sync over Supabase + Cloudflare Workers, with **anonymous account + pairing code** identity (no usernames, no passwords, no email). Manual "Sync now" button + auto-sync immediately after pairing/setup. Full spec: `docs/superpowers/specs/2026-05-18-sync-phase-1-design.md`.
 
-We'll design this properly (queue + retry, offline mode behaviour, optimistic UI, conflict UI if we ever need it) when we actually sit down to build it. This is just the sketch.
+Key design choices that landed:
+- `accountId` (UUID) is the bearer token. Stored in a new local-only `syncMeta` Dexie table.
+- 6-character pairing codes from a 32-char unambiguous alphabet, 5-min TTL, single-use, crypto-random, atomic-redeem.
+- Service-role API routes only; service_role bypasses RLS, but RLS is enabled with no policies as defense in depth.
+- LWW-on-`updatedAt` merge, shared with the existing import logic via `lib/mergeRows.ts`.
+- 5-minute clock-skew buffer on both push filter and pull cursor so client/server time drift doesn't drop writes.
 
-### Other things worth revisiting
+### 🚧 Sync — Phase 2 (designed, implementation pending)
 
-- **Settings UI** — currently theme is toggleable in the sidebar, but `weekStartsOn`, `renderMode`, and `view` are persisted without a dedicated settings surface. A small settings sheet would let users flip week start to Monday, choose default view on load, etc.
-- **Search** — find a project / note across the whole DB. Listed under Out of scope today, but reasonable to revisit once notes accumulate.
+Background auto-sync that doesn't nag. Triggers on app boot, on tab visibility, and debounced 5 s after local writes. One delayed retry on transient failure. Failure indicator dot on the sidebar Settings entry (red for real failures, gray-amber for offline). Subtle "Syncing…" text in the SyncSection during in-flight syncs. Online/offline detection via `navigator.onLine` + the `online` event. Offline edits work natively via the existing cursor-on-success design — no separate queue. See `docs/superpowers/specs/2026-05-19-sync-phase-2-design.md`.
+
+### Other things still worth revisiting
+
+- **Email recovery for sync accounts.** Phase 2 still has zero password recovery — if every paired device wipes its `accountId`, the server data is orphaned. A future spec adds an optional `email` column to `accounts` + a magic-link sign-in for restore. Schema is already prepared.
+- **Server-stamped `updated_at`** instead of client-stamped. Eliminates clock-skew issues entirely (the 5-min buffer is a workaround). Worth doing if skew ever becomes a real problem.
+- **Tombstone sweep cron** server-side to purge old `deletedAt` rows.
+- **Search** — find a project / note across the whole DB. Reasonable to revisit once notes accumulate.
+- **Device management UI** — list of paired devices, "Sign out other devices," last-seen timestamps. Requires a new `devices` table.
 
 ## Explicitly out of scope
 
