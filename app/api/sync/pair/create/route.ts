@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { checkRateLimit, getCloudflareEnv } from "@/lib/cloudflareEnv";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,19 +77,15 @@ export async function POST(request: Request) {
       }
       // Postgres unique-violation error code; retry on collision
       if (error.code !== "23505") {
-        return Response.json(
-          { error: "Failed to create pairing code.", detail: error.message },
-          { status: 500 },
-        );
+        return serverError(error, "Failed to create pairing code.");
       }
     }
 
-    return Response.json(
-      { error: "Failed to generate a unique code. Try again." },
-      { status: 500 },
+    return serverError(
+      new Error("Pairing code collision after max attempts"),
+      "Failed to generate a unique code. Try again.",
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: message }, { status: 500 });
+    return serverError(err);
   }
 }

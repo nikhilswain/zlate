@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { checkRateLimit, getCloudflareEnv } from "@/lib/cloudflareEnv";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,10 +48,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (updateError) {
-      return Response.json(
-        { error: "Failed to redeem code.", detail: updateError.message },
-        { status: 500 },
-      );
+      return serverError(updateError, "Failed to redeem code.");
     }
     if (!redeemed) {
       return Response.json({ error: "Invalid or expired code." }, { status: 410 });
@@ -58,7 +56,6 @@ export async function POST(request: Request) {
 
     return Response.json({ accountId: redeemed.account_id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: message }, { status: 500 });
+    return serverError(err);
   }
 }

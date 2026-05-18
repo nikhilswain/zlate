@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,15 +14,11 @@ export async function POST() {
       .single();
 
     if (error) {
-      return Response.json(
-        { error: "Failed to create account.", detail: error.message },
-        { status: 500 },
-      );
+      return serverError(error, "Failed to create account.");
     }
 
     return Response.json({ accountId: data.account_id }, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: message }, { status: 500 });
+    return serverError(err);
   }
 }

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { checkRateLimit, getCloudflareEnv } from "@/lib/cloudflareEnv";
+import { serverError } from "@/lib/apiError";
 import type {
   DayNoteWire,
   ProjectWire,
@@ -121,10 +122,7 @@ export async function POST(request: Request) {
           .from("projects")
           .upsert(row, { onConflict: "account_id,id" });
         if (upsertError) {
-          return Response.json(
-            { error: "Failed to upsert project.", detail: upsertError.message },
-            { status: 500 },
-          );
+          return serverError(upsertError, "Failed to upsert project.");
         }
         counters.projects += 1;
       }
@@ -153,10 +151,7 @@ export async function POST(request: Request) {
           .from("day_notes")
           .upsert(row, { onConflict: "account_id,id" });
         if (upsertError) {
-          return Response.json(
-            { error: "Failed to upsert day note.", detail: upsertError.message },
-            { status: 500 },
-          );
+          return serverError(upsertError, "Failed to upsert day note.");
         }
         counters.dayNotes += 1;
       }
@@ -182,10 +177,7 @@ export async function POST(request: Request) {
           .from("settings")
           .upsert(row, { onConflict: "account_id" });
         if (upsertError) {
-          return Response.json(
-            { error: "Failed to upsert settings.", detail: upsertError.message },
-            { status: 500 },
-          );
+          return serverError(upsertError, "Failed to upsert settings.");
         }
         counters.settingsUpdated = true;
       }
@@ -193,7 +185,6 @@ export async function POST(request: Request) {
 
     return Response.json({ applied: counters });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: message }, { status: 500 });
+    return serverError(err);
   }
 }

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { checkRateLimit, getCloudflareEnv } from "@/lib/cloudflareEnv";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,13 +74,9 @@ export async function GET(request: Request) {
     ]);
 
     if (projectsRes.error || notesRes.error || settingsRes.error) {
-      const detail =
-        projectsRes.error?.message ||
-        notesRes.error?.message ||
-        settingsRes.error?.message;
-      return Response.json(
-        { error: "Pull query failed.", detail },
-        { status: 500 },
+      return serverError(
+        projectsRes.error ?? notesRes.error ?? settingsRes.error,
+        "Pull query failed.",
       );
     }
 
@@ -90,7 +87,6 @@ export async function GET(request: Request) {
       serverTime,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: message }, { status: 500 });
+    return serverError(err);
   }
 }
