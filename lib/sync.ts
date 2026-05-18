@@ -69,6 +69,23 @@ export async function generatePairingCode(): Promise<{
   return (await response.json()) as { code: string; expiresAt: string };
 }
 
+export async function checkPairingStatus(
+  code: string,
+): Promise<{ exists: boolean; used: boolean; expired: boolean }> {
+  const response = await fetch(
+    `/api/sync/pair/status?code=${encodeURIComponent(code)}`,
+    { method: "GET" },
+  );
+  if (!response.ok) {
+    throw new SyncError(await parseError(response), response.status);
+  }
+  return (await response.json()) as {
+    exists: boolean;
+    used: boolean;
+    expired: boolean;
+  };
+}
+
 export async function redeemPairingCode(
   code: string,
 ): Promise<{ accountId: string }> {

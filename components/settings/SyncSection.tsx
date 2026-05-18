@@ -5,6 +5,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { useUIStore } from "@/store/useUIStore";
 import {
+  checkPairingStatus,
   generatePairingCode,
   registerAccount,
   signOut,
@@ -27,17 +28,58 @@ export function SyncSection() {
   const [view, setView] = useState<View>("idle");
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [code, setCode] = useState<CodeState | null>(null);
 
   function clearError() {
     setError(null);
   }
 
+  function flashStatus(message: string, ms = 3000) {
+    setStatus(message);
+    setTimeout(() => setStatus((current) => (current === message ? null : current)), ms);
+  }
+
+  // While showing a pairing code, poll the server to detect when the other
+  // device redeems it. On detect: dismiss the code view and flash a status.
+  useEffect(() => {
+    if (view !== "code" || !code) return;
+    const codeValue = code.code;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      if (cancelled) return;
+      try {
+        const status = await checkPairingStatus(codeValue);
+        if (cancelled) return;
+        if (status.used) {
+          setView("idle");
+          setCode(null);
+          flashStatus("Device paired!");
+        } else if (status.expired || !status.exists) {
+          setView("idle");
+          setCode(null);
+        }
+      } catch {
+        // Silently ignore — CountdownLine handles hard expiry timing.
+      }
+    }, 7000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [view, code]);
+
   async function handleSetup() {
     setWorking("setup");
     clearError();
     try {
       await registerAccount();
+      // Auto-sync so local data lands on the server immediately. Best-effort.
+      try {
+        await syncNow();
+      } catch (syncErr) {
+        console.error("[sync] post-setup sync failed", syncErr);
+      }
     } catch (err) {
       setError(toMessage(err));
     } finally {
@@ -110,6 +152,11 @@ export function SyncSection() {
             Enter pairing code
           </button>
         </div>
+        {status && (
+          <div className="text-[11px] text-fg-muted leading-relaxed">
+            {status}
+          </div>
+        )}
         {error && (
           <div className="text-[11px] text-red-400 leading-relaxed">
             {error}
@@ -190,6 +237,9 @@ export function SyncSection() {
         </button>
       </div>
 
+      {status && (
+        <div className="text-[11px] text-fg-muted leading-relaxed">{status}</div>
+      )}
       {error && (
         <div className="text-[11px] text-red-400 leading-relaxed">{error}</div>
       )}

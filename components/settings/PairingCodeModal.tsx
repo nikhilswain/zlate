@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { redeemPairingCode, SyncError } from "@/lib/sync";
+import { redeemPairingCode, syncNow, SyncError } from "@/lib/sync";
 
 export function PairingCodeModal() {
   const open = useUIStore((s) => s.pairingCodeModalOpen);
@@ -40,6 +40,13 @@ function ModalInner() {
     setError(null);
     try {
       await redeemPairingCode(trimmed);
+      // Auto-sync so the user sees their data immediately. Best-effort:
+      // pairing already succeeded; a sync failure here shouldn't block close.
+      try {
+        await syncNow();
+      } catch (syncErr) {
+        console.error("[sync] post-pair sync failed", syncErr);
+      }
       close();
     } catch (err) {
       const message =

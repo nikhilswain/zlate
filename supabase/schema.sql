@@ -52,3 +52,20 @@ create table settings (
   sidebar_collapsed bool not null,
   updated_at        timestamptz not null
 );
+
+-- Supabase's new API key system doesn't always auto-grant table privileges
+-- to service_role. Be explicit so the API routes can read/write.
+grant select, insert, update, delete on public.accounts      to service_role;
+grant select, insert, update, delete on public.pairing_codes to service_role;
+grant select, insert, update, delete on public.projects      to service_role;
+grant select, insert, update, delete on public.day_notes     to service_role;
+grant select, insert, update, delete on public.settings      to service_role;
+
+-- Defense in depth: enable RLS with no policies. service_role bypasses RLS,
+-- so the API routes still work. Any other role (anon, authenticated) is
+-- denied by default — useful if a publishable key ever gets exposed.
+alter table accounts      enable row level security;
+alter table pairing_codes enable row level security;
+alter table projects      enable row level security;
+alter table day_notes     enable row level security;
+alter table settings      enable row level security;
