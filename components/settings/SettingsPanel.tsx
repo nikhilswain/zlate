@@ -79,7 +79,7 @@ export function SettingsPanel() {
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
               <PreferencesSection />
               <DataSection />
-              {/* DangerSection — Task 6 */}
+              <DangerSection />
             </div>
           </motion.aside>
         </>
@@ -257,6 +257,29 @@ function DataSection() {
         <div className="text-[11px] text-red-400 leading-relaxed">{error}</div>
       )}
     </Section>
+  );
+}
+
+function DangerSection() {
+  const openWipe = useUIStore((s) => s.openWipeAll);
+
+  return (
+    <section className="flex flex-col gap-3 pt-5 border-t border-border-subtle">
+      <div className="text-[10px] uppercase tracking-wider text-red-400 font-medium">
+        Danger zone
+      </div>
+      <button
+        type="button"
+        onClick={openWipe}
+        className="self-start px-3 py-1.5 text-xs font-medium border border-red-500/40 text-red-400 rounded hover:bg-red-500/10 transition-colors"
+      >
+        Wipe all data
+      </button>
+      <div className="text-[11px] text-fg-subtle leading-relaxed">
+        Deletes every project, every day note, and resets your preferences.
+        Cannot be undone.
+      </div>
+    </section>
   );
 }
 
