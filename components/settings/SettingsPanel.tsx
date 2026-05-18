@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSettings } from "@/hooks/useSettings";
 import { updateSettings } from "@/lib/settings";
+import {
+  applyImport,
+  buildExport,
+  downloadExport,
+} from "@/lib/exportImport";
 
 export function SettingsPanel() {
   const open = useUIStore((s) => s.settingsOpen);
@@ -73,7 +78,7 @@ export function SettingsPanel() {
 
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
               <PreferencesSection />
-              {/* DataSection — Task 5 */}
+              <DataSection />
               {/* DangerSection — Task 6 */}
             </div>
           </motion.aside>
@@ -178,3 +183,81 @@ function Segmented<T extends string>({
     </div>
   );
 }
+
+function DataSection() {
+  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleExport() {
+    setError(null);
+    try {
+      const file = await buildExport(APP_VERSION);
+      downloadExport(file);
+      setStatus(
+        `Exported ${file.projects.length} project${file.projects.length === 1 ? "" : "s"}, ${file.dayNotes.length} note${file.dayNotes.length === 1 ? "" : "s"}.`,
+      );
+      setTimeout(() => setStatus(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Export failed.");
+    }
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    setError(null);
+    setStatus(null);
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const result = await applyImport(text);
+      const projectsTotal = result.projectsAdded + result.projectsUpdated;
+      const notesTotal = result.notesAdded + result.notesUpdated;
+      setStatus(
+        `Imported ${projectsTotal} project${projectsTotal === 1 ? "" : "s"}, ${notesTotal} note${notesTotal === 1 ? "" : "s"}.`,
+      );
+      setTimeout(() => setStatus(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Import failed.");
+    }
+  }
+
+  return (
+    <Section title="Data">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={handleExport}
+          className="flex-1 px-3 py-2 text-xs font-medium bg-fg text-bg rounded hover:opacity-90 transition-opacity"
+        >
+          Export backup
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex-1 px-3 py-2 text-xs font-medium border border-border text-fg rounded hover:bg-surface transition-colors"
+        >
+          Import backup
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          onChange={handleImportFile}
+          className="hidden"
+        />
+      </div>
+      {status && (
+        <div className="text-[11px] text-fg-muted leading-relaxed">
+          {status}
+        </div>
+      )}
+      {error && (
+        <div className="text-[11px] text-red-400 leading-relaxed">{error}</div>
+      )}
+    </Section>
+  );
+}
+
+const APP_VERSION = "0.4.0";
