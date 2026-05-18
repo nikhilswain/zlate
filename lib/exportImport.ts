@@ -44,7 +44,7 @@ export async function buildExport(appVersion: string): Promise<ExportFile> {
     appVersion,
     projects,
     dayNotes,
-    settings: settings ?? { ...DEFAULT_SETTINGS, updatedAt: new Date() },
+    settings: settings ?? DEFAULT_SETTINGS,
   };
 }
 
@@ -56,7 +56,13 @@ function reviveDates<T extends Record<string, unknown>>(
   for (const k of dateKeys) {
     const v = out[k];
     if (typeof v === "string") {
-      out[k] = new Date(v) as T[keyof T];
+      const d = new Date(v);
+      if (isNaN(d.getTime())) {
+        throw new ImportError(
+          `Invalid date for field "${String(k)}": ${v}`,
+        );
+      }
+      out[k] = d as T[keyof T];
     } else if (v === null) {
       // soft-delete tombstone for deletedAt — leave null
     }
