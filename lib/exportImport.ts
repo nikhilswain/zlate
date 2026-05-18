@@ -167,11 +167,19 @@ export async function applyImport(rawJson: string): Promise<ImportResult> {
 }
 
 export async function wipeAllData(): Promise<void> {
-  await db.transaction("rw", db.projects, db.dayNotes, db.settings, async () => {
-    await db.projects.clear();
-    await db.dayNotes.clear();
-    await db.settings.delete(SETTINGS_ID);
-  });
+  await db.transaction(
+    "rw",
+    db.projects,
+    db.dayNotes,
+    db.settings,
+    db.syncMeta,
+    async () => {
+      await db.projects.clear();
+      await db.dayNotes.clear();
+      await db.settings.delete(SETTINGS_ID);
+      await db.syncMeta.clear();
+    },
+  );
 }
 
 export function downloadExport(file: ExportFile): void {

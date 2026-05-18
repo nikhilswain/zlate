@@ -35,3 +35,9 @@ export type Settings = {
   sidebarCollapsed: boolean;
   updatedAt: Date;
 };
+
+export type SyncMeta = {
+  id: "meta";
+  accountId: string | null;
+  lastSyncedAt: string | null;
+};
