@@ -1,0 +1,92 @@
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { checkRateLimit, getCloudflareEnv } from "@/lib/cloudflareEnv";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CODE_TTL_MS = 5 * 60 * 1000;
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars (I/O/0/1)
+const CODE_LENGTH = 6;
+const MAX_INSERT_ATTEMPTS = 3;
+
+function generateCode(): string {
+  let out = "";
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return out;
+}
+
+function getClientIp(request: Request): string {
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
+function getBearerAccountId(request: Request): string | null {
+  const auth = request.headers.get("authorization");
+  if (!auth || !auth.startsWith("Bearer ")) return null;
+  const token = auth.slice("Bearer ".length).trim();
+  // Crude UUID shape check; full validation happens via DB lookup
+  if (!/^[0-9a-f-]{36}$/i.test(token)) return null;
+  return token;
+}
+
+export async function POST(request: Request) {
+  try {
+    const env = await getCloudflareEnv();
+    const ip = getClientIp(request);
+    if (!(await checkRateLimit(env.PAIRING_LIMIT, ip))) {
+      return Response.json(
+        { error: "Too many attempts. Wait a minute and try again." },
+        { status: 429, headers: { "Retry-After": "60" } },
+      );
+    }
+
+    const accountId = getBearerAccountId(request);
+    if (!accountId) {
+      return Response.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const supabase = getSupabaseAdmin();
+    const { data: account, error: lookupError } = await supabase
+      .from("accounts")
+      .select("account_id")
+      .eq("account_id", accountId)
+      .maybeSingle();
+
+    if (lookupError || !account) {
+      return Response.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
+
+    for (let attempt = 0; attempt < MAX_INSERT_ATTEMPTS; attempt++) {
+      const code = generateCode();
+      const { error } = await supabase
+        .from("pairing_codes")
+        .insert({ code, account_id: accountId, expires_at: expiresAt });
+
+      if (!error) {
+        return Response.json({ code, expiresAt });
+      }
+      // Postgres unique-violation error code; retry on collision
+      if (error.code !== "23505") {
+        return Response.json(
+          { error: "Failed to create pairing code.", detail: error.message },
+          { status: 500 },
+        );
+      }
+    }
+
+    return Response.json(
+      { error: "Failed to generate a unique code. Try again." },
+      { status: 500 },
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return Response.json({ error: message }, { status: 500 });
+  }
+}
