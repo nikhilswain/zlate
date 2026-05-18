@@ -20,7 +20,7 @@ export function AppShell() {
       <ProjectDeleteModal />
       <SettingsPanel />
       <WipeAllDataModal />
-      <PairingCodeModal onSuccess={() => {}} />
+      <PairingCodeModal />
       <KeyboardShortcuts />
     </div>
   );

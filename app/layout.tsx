@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeApplier } from "@/components/shell/ThemeApplier";
 
@@ -32,10 +33,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} h-full`}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
-      </head>
       <body className="min-h-full flex flex-col">
+        <Script id="zlate-boot" strategy="beforeInteractive">
+          {bootScript}
+        </Script>
         <ThemeApplier />
         {children}
       </body>

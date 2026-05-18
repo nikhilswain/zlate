@@ -7,21 +7,17 @@ import { useUIStore } from "@/store/useUIStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { redeemPairingCode, SyncError } from "@/lib/sync";
 
-type Props = {
-  onSuccess: () => void;
-};
-
-export function PairingCodeModal({ onSuccess }: Props) {
+export function PairingCodeModal() {
   const open = useUIStore((s) => s.pairingCodeModalOpen);
 
   return (
     <AnimatePresence>
-      {open && <ModalInner key="pairing-code-modal" onSuccess={onSuccess} />}
+      {open && <ModalInner key="pairing-code-modal" />}
     </AnimatePresence>
   );
 }
 
-function ModalInner({ onSuccess }: Props) {
+function ModalInner() {
   const close = useUIStore((s) => s.closePairingCodeModal);
   const isMobile = useIsMobile();
 
@@ -45,7 +41,6 @@ function ModalInner({ onSuccess }: Props) {
     try {
       await redeemPairingCode(trimmed);
       close();
-      onSuccess();
     } catch (err) {
       const message =
         err instanceof SyncError
