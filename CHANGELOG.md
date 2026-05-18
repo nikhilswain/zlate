@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.5.0 — Cross-device sync (Phase 1)
+
+### Sync
+
+- Cross-device sync over Supabase + Cloudflare Workers, with **anonymous account + pairing code** identity. No usernames, no passwords, no email.
+- **Set up sync** on the first device creates an opaque server account. The `accountId` (a UUID) is stored locally in a new `syncMeta` Dexie table and acts as the bearer token for all subsequent sync requests.
+- **Pair another device** generates a 6-character one-time code valid for 5 minutes. Enter it on the second device to join the same account. Codes use crypto-strength randomness from a 32-char unambiguous alphabet (no I/O/0/1) and are rate-limited at the API level (10/min/IP). Redeem is atomic — a single `UPDATE ... WHERE used_at IS NULL ... RETURNING` so two concurrent redeemers can't both win.
+- **Sync now** does a push-then-pull round trip — pushes all locally-changed rows since `lastSyncedAt`, then pulls all server-changed rows. Same last-write-wins-on-`updatedAt` merge logic that the import flow already used; extracted into `lib/mergeRows.ts` so both share one implementation.
+- **Scope:** projects, day notes, and the settings singleton all sync. Settings is whole-row LWW (accepted gotcha — simultaneous edits to different fields on two devices clobber the loser's full row).
+- **Sign out** clears local sync state without touching server data. Pairing back in from another device restores everything.
+- **Manual only in Phase 1** — there's a `Sync now` button in Settings. Auto-sync on focus + interval is deferred to Phase 2.
+
+### Internal
+
+- New module `lib/sync.ts` — client engine: `registerAccount`, `generatePairingCode`, `redeemPairingCode`, `syncNow`, `signOut`, `getSyncStatus`. Throws `SyncError` (with optional HTTP `status`) on any failure.
+- New module `lib/wireFormat.ts` — camelCase ↔ snake_case + ISO date revival, shared between client and server. Reuses the invalid-date guard pattern already shipped in `exportImport.ts`.
+- New module `lib/mergeRows.ts` — LWW per-row merge, called by both `applyImport` and `syncNow`. `applyImport` refactored to delegate.
+- New module `lib/syncMeta.ts` — Dexie accessors for the new `syncMeta` table.
+- New module `lib/cloudflareEnv.ts` — dynamic-import of `@opennextjs/cloudflare`'s `getCloudflareContext` with a graceful no-op fallback so `next dev` doesn't crash on missing bindings.
+- Dexie schema bumped to version 3 with additive `syncMeta` store. Wipe All Data now also clears it.
+- Five new App Router route handlers under `app/api/sync/*`: `register`, `pair/create`, `pair/redeem`, `push`, `pull`. All use a service-role Supabase client; the service-role key never leaves the Worker. Push validates incoming `updated_at` strings and returns 400 if any are malformed.
+- Two Cloudflare rate-limit bindings in `wrangler.jsonc`: `PAIRING_LIMIT` (10/min/IP, applied on both pairing endpoints) and `SYNC_LIMIT` (60/min/account, applied on push/pull).
+
+### Risks acknowledged
+
+- The `accountId` UUID is effectively a long-lived bearer token. Anyone with it can read/write your data. Same security profile as a session cookie.
+- No password recovery in Phase 1. Wiping every paired device's local data while losing all `accountId` copies orphans the server data (still on the server, no way to claim it). Email recovery is a future spec.
+
 ## 0.4.0 — Settings panel
 
 ### Settings
