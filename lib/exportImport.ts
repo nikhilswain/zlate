@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { DEFAULT_SETTINGS, SETTINGS_ID } from "./settings";
 import type { DayNote, Project, Settings } from "@/types/project";
+import { mergeRowsIntoDexie } from "./mergeRows";
 
 export const EXPORT_SCHEMA_VERSION = 2;
 
@@ -116,54 +117,31 @@ function parseExport(raw: unknown): ExportFile {
 
 export async function applyImport(rawJson: string): Promise<ImportResult> {
   const parsed = parseExport(JSON.parse(rawJson));
-  const result: ImportResult = {
-    projectsAdded: 0,
-    projectsUpdated: 0,
-    projectsSkipped: 0,
-    notesAdded: 0,
-    notesUpdated: 0,
-    notesSkipped: 0,
-    settingsUpdated: false,
+
+  let merge: Awaited<ReturnType<typeof mergeRowsIntoDexie>>;
+  await db.transaction(
+    "rw",
+    db.projects,
+    db.dayNotes,
+    db.settings,
+    async () => {
+      merge = await mergeRowsIntoDexie({
+        projects: parsed.projects,
+        dayNotes: parsed.dayNotes,
+        settings: parsed.settings,
+      });
+    },
+  );
+
+  return {
+    projectsAdded: merge!.projectsAdded,
+    projectsUpdated: merge!.projectsUpdated,
+    projectsSkipped: merge!.projectsSkipped,
+    notesAdded: merge!.notesAdded,
+    notesUpdated: merge!.notesUpdated,
+    notesSkipped: merge!.notesSkipped,
+    settingsUpdated: merge!.settingsUpdated,
   };
-
-  await db.transaction("rw", db.projects, db.dayNotes, db.settings, async () => {
-    for (const incoming of parsed.projects) {
-      const existing = await db.projects.get(incoming.id);
-      if (!existing) {
-        await db.projects.put(incoming);
-        result.projectsAdded += 1;
-      } else if (incoming.updatedAt.getTime() > existing.updatedAt.getTime()) {
-        await db.projects.put(incoming);
-        result.projectsUpdated += 1;
-      } else {
-        result.projectsSkipped += 1;
-      }
-    }
-
-    for (const incoming of parsed.dayNotes) {
-      const existing = await db.dayNotes.get(incoming.id);
-      if (!existing) {
-        await db.dayNotes.put(incoming);
-        result.notesAdded += 1;
-      } else if (incoming.updatedAt.getTime() > existing.updatedAt.getTime()) {
-        await db.dayNotes.put(incoming);
-        result.notesUpdated += 1;
-      } else {
-        result.notesSkipped += 1;
-      }
-    }
-
-    const localSettings = await db.settings.get(SETTINGS_ID);
-    if (
-      !localSettings ||
-      parsed.settings.updatedAt.getTime() > localSettings.updatedAt.getTime()
-    ) {
-      await db.settings.put({ ...parsed.settings, id: SETTINGS_ID });
-      result.settingsUpdated = true;
-    }
-  });
-
-  return result;
 }
 
 export async function wipeAllData(): Promise<void> {
