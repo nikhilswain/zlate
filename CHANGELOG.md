@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 — Settings panel
+
+### Settings
+
+- New right-side panel (bottom sheet on mobile), reached via a **Settings** entry in the sidebar footer. Both expanded and rail sidebar layouts get the entry — expanded shows a labeled pill, rail shows the gear icon stacked above the theme toggle. Esc / click-outside dismisses. Mutually exclusive with the project detail panel via Zustand state — opening one closes the other.
+- **Preferences** — Theme (mirrors the sidebar toggle; both stay in sync via Dexie) and Week starts on (Sun / Mon). `weekStartsOn` had no UI before; now it does. The `ThemeToggle` moved from the expanded sidebar header to a new sidebar footer next to the Settings button, matching the rail layout's footer-as-utility-bar pattern.
+- **Data: Export + Import** — Export bundles every project, every day note, and the settings singleton into a single JSON blob with a schema version, the app version, and a timestamp. Download filename is `zlate-backup-YYYY-MM-DD.json`. Import accepts the same shape, validates `schemaVersion`, and upserts by `id` with **last-write-wins on `updatedAt`** inside a single Dexie transaction — same semantics future sync will use, so the merge logic is reusable. Tombstones (`deletedAt`) round-trip so deletes propagate. Inline status toast on success (auto-fades after 3 s); inline red message on parse/validation error. Re-selecting the same file works (input value reset to `""` after pick).
+- **Danger zone: Wipe all data** — destructive confirmation modal mirroring the Project Delete modal pattern exactly. Typed-phrase confirmation (`wipe all data`), paste and drop blocked on the input, Enter submits when valid. Clears `projects`, `dayNotes`, and the settings singleton row in a single transaction. Settings recreates from `DEFAULT_SETTINGS` on next read via the existing fallback in `useSettings`, so the UI reverts to defaults without any reload.
+- Esc priority cascade extended: Wipe modal → Delete modal → Create popover → Day overflow popover → **Settings panel** → Day note → Project panel → mobile sidebar → clear focus. Destructive modals sit at the top of the cascade; settings between popovers and detail panels.
+
+### Internal
+
+- New `lib/exportImport.ts` — pure functions (`buildExport`, `applyImport`, `wipeAllData`, `downloadExport`), no React dependency. Reusable when sync ships. Invalid-date strings throw `ImportError` rather than silently corrupting the LWW merge.
+- New `components/settings/SettingsPanel.tsx` and `components/settings/WipeAllDataModal.tsx`. Both follow the existing `ProjectDetailPanel` / `ProjectDeleteModal` idioms for animation, mobile-vs-desktop layout swap, and click-outside semantics.
+- `store/useUIStore.ts` gains `settingsOpen` and `wipeAllOpen` flags with the matching open/close/cancel actions. The four existing panel/popover openers now clear `settingsOpen` for mutual exclusivity. `closeSettings()` cascades to close the wipe modal too.
+- `ProjectDetailPanel`'s click-outside guard now also bails when the wipe modal or settings panel is open, so clicking inside either doesn't accidentally close the panel underneath.
+
 ## 0.3.0 — Mobile first-paint, calendar transitions, range picker
 
 ### Mobile first-paint (flicker fix)
