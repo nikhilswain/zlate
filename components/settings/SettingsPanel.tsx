@@ -12,6 +12,7 @@ import {
   buildExport,
   downloadExport,
 } from "@/lib/exportImport";
+import { SyncSection } from "./SyncSection";
 
 export function SettingsPanel() {
   const open = useUIStore((s) => s.settingsOpen);
@@ -78,6 +79,7 @@ export function SettingsPanel() {
 
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
               <PreferencesSection />
+              <SyncSection />
               <DataSection />
               <DangerSection />
             </div>

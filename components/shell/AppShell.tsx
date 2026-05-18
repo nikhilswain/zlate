@@ -6,6 +6,7 @@ import { ProjectDetailPanel } from "@/components/projects/ProjectDetailPanel";
 import { ProjectDeleteModal } from "@/components/projects/ProjectDeleteModal";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { WipeAllDataModal } from "@/components/settings/WipeAllDataModal";
+import { PairingCodeModal } from "@/components/settings/PairingCodeModal";
 import { KeyboardShortcuts } from "@/components/shell/KeyboardShortcuts";
 
 export function AppShell() {
@@ -19,6 +20,7 @@ export function AppShell() {
       <ProjectDeleteModal />
       <SettingsPanel />
       <WipeAllDataModal />
+      <PairingCodeModal onSuccess={() => {}} />
       <KeyboardShortcuts />
     </div>
   );

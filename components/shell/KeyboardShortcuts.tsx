@@ -40,6 +40,8 @@ export function KeyboardShortcuts() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const cancelWipeAll = useUIStore((s) => s.cancelWipeAll);
   const closeSettings = useUIStore((s) => s.closeSettings);
+  const pairingCodeModalOpen = useUIStore((s) => s.pairingCodeModalOpen);
+  const closePairingCodeModal = useUIStore((s) => s.closePairingCodeModal);
 
   useEffect(() => {
     function isEditableTarget(t: EventTarget | null): boolean {
@@ -97,6 +99,8 @@ export function KeyboardShortcuts() {
         case "Escape":
           if (wipeAllOpen) {
             cancelWipeAll();
+          } else if (pairingCodeModalOpen) {
+            closePairingCodeModal();
           } else if (projectIdPendingDelete) {
             cancelDeleteProject();
           } else if (popoverAnchor) {
@@ -142,6 +146,8 @@ export function KeyboardShortcuts() {
     settingsOpen,
     cancelWipeAll,
     closeSettings,
+    pairingCodeModalOpen,
+    closePairingCodeModal,
   ]);
 
   return null;
