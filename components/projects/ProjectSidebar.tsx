@@ -32,6 +32,7 @@ export function ProjectSidebar() {
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
   const mobileOpen = useUIStore((s) => s.mobileSidebarOpen);
   const closeMobile = useUIStore((s) => s.closeMobileSidebar);
+  const openSettings = useUIStore((s) => s.openSettings);
 
   const hasFocus = focused.size > 0;
 
@@ -59,6 +60,7 @@ export function ProjectSidebar() {
               toggleFocus={toggleFocus}
               clearFocus={clearFocus}
               onExpand={toggleCollapsed}
+              openSettings={openSettings}
             />
           ) : (
             <ExpandedLayout
@@ -71,6 +73,7 @@ export function ProjectSidebar() {
               askDeleteProject={askDeleteProject}
               setSelectedProjectId={setSelectedProjectId}
               onCollapse={toggleCollapsed}
+              openSettings={openSettings}
             />
           )}
         </AnimatePresence>
@@ -108,6 +111,7 @@ export function ProjectSidebar() {
                   setSelectedProjectId={setSelectedProjectId}
                   onClose={closeMobile}
                   afterRowAction={closeMobile}
+                  openSettings={openSettings}
                 />
               </motion.aside>
             </>
@@ -129,6 +133,7 @@ type ExpandedProps = {
   onCollapse?: () => void;
   onClose?: () => void;
   afterRowAction?: () => void;
+  openSettings: () => void;
 };
 
 function ExpandedLayout({
@@ -142,6 +147,7 @@ function ExpandedLayout({
   onCollapse,
   onClose,
   afterRowAction,
+  openSettings,
 }: ExpandedProps) {
   const isMobile = useIsMobile();
   function runAfter() {
@@ -187,7 +193,6 @@ function ExpandedLayout({
               <X size={16} />
             </button>
           )}
-          <ThemeToggle />
         </div>
       </header>
 
@@ -293,6 +298,22 @@ function ExpandedLayout({
           </ul>
         )}
       </div>
+
+      <footer className="flex items-center justify-between gap-2 px-5 py-4 border-t border-border-subtle">
+        <ThemeToggle />
+        <button
+          type="button"
+          onClick={() => {
+            openSettings();
+            runAfter();
+          }}
+          aria-label="Settings"
+          className="inline-flex h-9 px-3 items-center gap-2 rounded-full border border-border text-fg-muted hover:bg-surface hover:text-fg transition-colors"
+        >
+          <Settings2 size={14} />
+          <span className="text-[12px] font-medium">Settings</span>
+        </button>
+      </footer>
     </motion.div>
   );
 }
@@ -304,6 +325,7 @@ type RailProps = {
   toggleFocus: (id: string) => void;
   clearFocus: () => void;
   onExpand: () => void;
+  openSettings: () => void;
 };
 
 function RailLayout({
@@ -313,6 +335,7 @@ function RailLayout({
   toggleFocus,
   clearFocus,
   onExpand,
+  openSettings,
 }: RailProps) {
   return (
     <motion.div
@@ -359,7 +382,15 @@ function RailLayout({
         })}
       </div>
 
-      <footer className="py-4">
+      <footer className="py-4 flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={openSettings}
+          aria-label="Settings"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-fg-muted hover:bg-surface hover:text-fg transition-colors"
+        >
+          <Settings2 size={16} />
+        </button>
         <ThemeToggle />
       </footer>
     </motion.div>
