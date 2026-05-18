@@ -41,6 +41,9 @@ type UIState = {
   wipeAllOpen: boolean;
   openWipeAll: () => void;
   cancelWipeAll: () => void;
+  pairingCodeModalOpen: boolean;
+  openPairingCodeModal: () => void;
+  closePairingCodeModal: () => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -113,4 +116,7 @@ export const useUIStore = create<UIState>((set) => ({
   wipeAllOpen: false,
   openWipeAll: () => set({ wipeAllOpen: true }),
   cancelWipeAll: () => set({ wipeAllOpen: false }),
+  pairingCodeModalOpen: false,
+  openPairingCodeModal: () => set({ pairingCodeModalOpen: true }),
+  closePairingCodeModal: () => set({ pairingCodeModalOpen: false }),
 }));
