@@ -4,6 +4,8 @@ import { CreateProjectPopover } from "@/components/projects/CreateProjectPopover
 import { DayOverflowPopover } from "@/components/projects/DayOverflowPopover";
 import { ProjectDetailPanel } from "@/components/projects/ProjectDetailPanel";
 import { ProjectDeleteModal } from "@/components/projects/ProjectDeleteModal";
+import { SettingsPanel } from "@/components/settings/SettingsPanel";
+import { WipeAllDataModal } from "@/components/settings/WipeAllDataModal";
 import { KeyboardShortcuts } from "@/components/shell/KeyboardShortcuts";
 
 export function AppShell() {
@@ -15,6 +17,8 @@ export function AppShell() {
       <DayOverflowPopover />
       <ProjectDetailPanel />
       <ProjectDeleteModal />
+      <SettingsPanel />
+      <WipeAllDataModal />
       <KeyboardShortcuts />
     </div>
   );

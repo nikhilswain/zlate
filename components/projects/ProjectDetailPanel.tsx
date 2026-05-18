@@ -15,6 +15,8 @@ export function ProjectDetailPanel() {
   const setSelectedProjectId = useUIStore((s) => s.setSelectedProjectId);
   const closeDayNote = useUIStore((s) => s.closeDayNote);
   const projectIdPendingDelete = useUIStore((s) => s.projectIdPendingDelete);
+  const wipeAllOpen = useUIStore((s) => s.wipeAllOpen);
+  const settingsOpen = useUIStore((s) => s.settingsOpen);
   const isMobile = useIsMobile();
 
   const activeProjectId = selectedDayNote
@@ -39,7 +41,7 @@ export function ProjectDetailPanel() {
     if (!open) return;
     function onPointerDown(e: PointerEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        if (projectIdPendingDelete) return;
+        if (projectIdPendingDelete || wipeAllOpen || settingsOpen) return;
         if (selectedDayNote) closeDayNote();
         else setSelectedProjectId(null);
       }
@@ -50,6 +52,8 @@ export function ProjectDetailPanel() {
     open,
     selectedDayNote,
     projectIdPendingDelete,
+    wipeAllOpen,
+    settingsOpen,
     closeDayNote,
     setSelectedProjectId,
   ]);

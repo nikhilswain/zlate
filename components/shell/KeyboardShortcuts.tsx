@@ -36,6 +36,10 @@ export function KeyboardShortcuts() {
   const clearFocus = useUIStore((s) => s.clearFocus);
   const cancelDeleteProject = useUIStore((s) => s.cancelDeleteProject);
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar);
+  const wipeAllOpen = useUIStore((s) => s.wipeAllOpen);
+  const settingsOpen = useUIStore((s) => s.settingsOpen);
+  const cancelWipeAll = useUIStore((s) => s.cancelWipeAll);
+  const closeSettings = useUIStore((s) => s.closeSettings);
 
   useEffect(() => {
     function isEditableTarget(t: EventTarget | null): boolean {
@@ -91,12 +95,16 @@ export function KeyboardShortcuts() {
           }
           break;
         case "Escape":
-          if (projectIdPendingDelete) {
+          if (wipeAllOpen) {
+            cancelWipeAll();
+          } else if (projectIdPendingDelete) {
             cancelDeleteProject();
           } else if (popoverAnchor) {
             closeCreatePopover();
           } else if (dayOverflowPopover) {
             closeDayOverflowPopover();
+          } else if (settingsOpen) {
+            closeSettings();
           } else if (selectedDayNote) {
             closeDayNote();
           } else if (selectedProjectId) {
@@ -130,6 +138,10 @@ export function KeyboardShortcuts() {
     clearFocus,
     cancelDeleteProject,
     closeMobileSidebar,
+    wipeAllOpen,
+    settingsOpen,
+    cancelWipeAll,
+    closeSettings,
   ]);
 
   return null;
