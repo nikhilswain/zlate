@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { Settings } from "@/types/project";
+import { scheduleAutoSync } from "./syncTriggers";
 
 export const SETTINGS_ID = "singleton" as const;
 
@@ -24,4 +25,5 @@ export async function updateSettings(patch: SettingsPatch): Promise<void> {
     updatedAt: new Date(),
   };
   await db.settings.put(next);
+  scheduleAutoSync(5000);
 }

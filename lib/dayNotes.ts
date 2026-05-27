@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { DayNote } from "@/types/project";
+import { scheduleAutoSync } from "./syncTriggers";
 
 export const MAX_DAY_NOTE_CHARS = 280;
 
@@ -42,6 +43,7 @@ export async function upsertDayNote(
       deletedAt: null,
     };
     await db.dayNotes.add(note);
+    scheduleAutoSync(5000);
     return;
   }
 
@@ -52,6 +54,7 @@ export async function upsertDayNote(
       deletedAt: now,
       updatedAt: now,
     });
+    scheduleAutoSync(5000);
     return;
   }
 
@@ -61,6 +64,7 @@ export async function upsertDayNote(
     text: trimmed,
     updatedAt: now,
   });
+  scheduleAutoSync(5000);
 }
 
 export async function softDeleteDayNote(id: string): Promise<void> {
@@ -71,6 +75,7 @@ export async function softDeleteDayNote(id: string): Promise<void> {
     deletedAt: new Date(),
     updatedAt: new Date(),
   });
+  scheduleAutoSync(5000);
 }
 
 export async function softDeleteDayNotesForProject(

@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { softDeleteDayNotesForProject } from "./dayNotes";
 import type { Project } from "@/types/project";
+import { scheduleAutoSync } from "./syncTriggers";
 
 type CreateInput = {
   name: string;
@@ -41,6 +42,7 @@ export async function createProject(input: CreateInput): Promise<string> {
     deletedAt: null,
   };
   await db.projects.add(project);
+  scheduleAutoSync(5000);
   return project.id;
 }
 
@@ -62,6 +64,7 @@ export async function updateProject(
     next.description = trimmed.length > 0 ? trimmed : undefined;
   }
   await db.projects.put(next);
+  scheduleAutoSync(5000);
 }
 
 export async function softDeleteProject(id: string): Promise<void> {
@@ -73,4 +76,5 @@ export async function softDeleteProject(id: string): Promise<void> {
     updatedAt: new Date(),
   });
   await softDeleteDayNotesForProject(id);
+  scheduleAutoSync(5000);
 }
