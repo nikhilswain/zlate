@@ -40,4 +40,7 @@ export type SyncMeta = {
   id: "meta";
   accountId: string | null;
   lastSyncedAt: string | null;
+  lastSyncFailedAt: string | null; // ISO of last failed attempt, or null
+  lastSyncError: string | null; // user-facing error message, or null
+  isOffline: boolean; // last failure was due to navigator.onLine === false
 };
