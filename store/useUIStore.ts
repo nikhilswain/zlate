@@ -44,6 +44,8 @@ type UIState = {
   pairingCodeModalOpen: boolean;
   openPairingCodeModal: () => void;
   closePairingCodeModal: () => void;
+  syncInFlight: boolean;
+  setSyncInFlight: (v: boolean) => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -119,4 +121,6 @@ export const useUIStore = create<UIState>((set) => ({
   pairingCodeModalOpen: false,
   openPairingCodeModal: () => set({ pairingCodeModalOpen: true }),
   closePairingCodeModal: () => set({ pairingCodeModalOpen: false }),
+  syncInFlight: false,
+  setSyncInFlight: (v) => set({ syncInFlight: v }),
 }));
