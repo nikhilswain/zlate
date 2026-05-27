@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.0 — Auto-sync (Sync Phase 2)
+
+### Sync
+
+- **Sync now happens on its own.** No more remembering to press "Sync now". Four triggers cover the single-user-multi-device case: app **boot** (500 ms after the shell mounts, so the UI paints first), returning to the tab (**visibilitychange → visible**), **after a local edit** (debounced 5 s so a burst of typing coalesces into one sync), and immediately on **reconnect** (`online` event). Implemented as a pure scheduler in `lib/syncTriggers.ts` plus a `useSyncAutoTriggers()` hook mounted once via a headless `SyncAutoTriggers` client component in `AppShell`.
+- **Resilient without nagging.** Auto-syncs go through a new `syncWithRetry()` wrapper: transient failures (network drop, `429`, `5xx`) wait 10 s and retry once; non-transient errors (other `4xx`) surface immediately with no retry. The manual "Sync now" button stays a single raw attempt for instant feedback — press again if it fails.
+- **Quiet failure indicator.** A 6 px dot appears on the sidebar Settings gear (both expanded and rail layouts) when a sync is stuck — **red** for a real failure, **amber** when you're simply offline. Tap through to Settings to see the message.
+- **In-flight + failure surfacing in Settings.** A subtle "Syncing…" label shows next to "Sync now" during background syncs, and an inline banner with a **Retry now** button appears when the last sync failed — amber "you're offline, changes will sync when you reconnect" or red "last sync failed: …".
+- **Offline edits just work.** Writes always land in Dexie first; while offline the scheduler no-ops, and the `online` event flushes everything on reconnect. No write queue needed — the `lastSyncedAt` cursor only advances on a successful sync, so offline edits keep their `updatedAt > lastSyncedAt` relationship and ride the next push regardless of how long you were offline.
+
+### Internal
+
+- New `lib/syncTriggers.ts` — framework-agnostic scheduler owning the debounce timer, a 5 s throttle (blocks back-to-back syncs from event bursts), the `navigator.onLine` gate, and a module-level single-flight promise so two triggers never run overlapping syncs.
+- New `hooks/useSyncAutoTriggers.ts` + `components/shell/SyncAutoTriggers.tsx` — installs/cleans up the boot timer and `visibilitychange` / `online` / `offline` listeners. AppShell stays a server component; the hook lives behind a thin client boundary.
+- `lib/sync.ts` — `syncNow` now bails fast when `navigator.onLine` is false, flips the new `syncInFlight` store flag in a `try/finally`, and calls `clearSyncFailure()` on success. Added `syncWithRetry()` with transient-error classification by HTTP status.
+- `types/project.ts` / `lib/syncMeta.ts` — `SyncMeta` gains `lastSyncFailedAt`, `lastSyncError`, `isOffline` (additive — no Dexie schema bump; pre-existing rows default the new fields via a spread in `getSyncMeta`). New `setSyncFailure()` / `clearSyncFailure()` accessors; `clearSyncFailure` skips the write when nothing is set, avoiding a needless `useLiveQuery` re-render.
+- `store/useUIStore.ts` — new `syncInFlight` boolean (React-subscribable mirror of the scheduler's single-flight promise).
+- All seven Dexie write functions (`createProject`, `updateProject`, `softDeleteProject`, `upsertDayNote`, `softDeleteDayNote`, `updateSettings`) call `scheduleAutoSync(5000)` after a successful write. `softDeleteDayNotesForProject` is left alone — it only runs via `softDeleteProject`, which already schedules.
+
+### Out of scope (deferred)
+
+- No periodic interval polling, no exponential backoff, no Supabase Realtime, no conflict UI — LWW stays silent. An explicit pending-push queue remains unnecessary given the cursor-on-success design.
+- Clock skew beyond the existing 5 min buffer still requires server-stamped `updated_at` (a future refactor).
+
 ## 0.5.1 — Sync polish (Phase 1 followups)
 
 ### Sync
