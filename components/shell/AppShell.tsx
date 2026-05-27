@@ -8,6 +8,7 @@ import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { WipeAllDataModal } from "@/components/settings/WipeAllDataModal";
 import { PairingCodeModal } from "@/components/settings/PairingCodeModal";
 import { KeyboardShortcuts } from "@/components/shell/KeyboardShortcuts";
+import { SyncAutoTriggers } from "@/components/shell/SyncAutoTriggers";
 
 export function AppShell() {
   return (
@@ -22,6 +23,7 @@ export function AppShell() {
       <WipeAllDataModal />
       <PairingCodeModal />
       <KeyboardShortcuts />
+      <SyncAutoTriggers />
     </div>
   );
 }
