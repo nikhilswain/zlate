@@ -14,6 +14,9 @@ import { useProjects } from "@/hooks/useProjects";
 import { useSettings } from "@/hooks/useSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useUIStore } from "@/store/useUIStore";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+import { SYNC_META_ID } from "@/lib/syncMeta";
 import { updateSettings } from "@/lib/settings";
 import { readableTextColor } from "@/lib/contrast";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
@@ -33,6 +36,10 @@ export function ProjectSidebar() {
   const mobileOpen = useUIStore((s) => s.mobileSidebarOpen);
   const closeMobile = useUIStore((s) => s.closeMobileSidebar);
   const openSettings = useUIStore((s) => s.openSettings);
+
+  const syncMeta = useLiveQuery(() => db.syncMeta.get(SYNC_META_ID));
+  const syncFailed = (syncMeta?.lastSyncFailedAt ?? null) !== null;
+  const syncOffline = syncMeta?.isOffline ?? false;
 
   const hasFocus = focused.size > 0;
 
@@ -61,6 +68,8 @@ export function ProjectSidebar() {
               clearFocus={clearFocus}
               onExpand={toggleCollapsed}
               openSettings={openSettings}
+              syncFailed={syncFailed}
+              syncOffline={syncOffline}
             />
           ) : (
             <ExpandedLayout
@@ -74,6 +83,8 @@ export function ProjectSidebar() {
               setSelectedProjectId={setSelectedProjectId}
               onCollapse={toggleCollapsed}
               openSettings={openSettings}
+              syncFailed={syncFailed}
+              syncOffline={syncOffline}
             />
           )}
         </AnimatePresence>
@@ -112,6 +123,8 @@ export function ProjectSidebar() {
                   onClose={closeMobile}
                   afterRowAction={closeMobile}
                   openSettings={openSettings}
+                  syncFailed={syncFailed}
+                  syncOffline={syncOffline}
                 />
               </motion.aside>
             </>
@@ -134,6 +147,8 @@ type ExpandedProps = {
   onClose?: () => void;
   afterRowAction?: () => void;
   openSettings: () => void;
+  syncFailed: boolean;
+  syncOffline: boolean;
 };
 
 function ExpandedLayout({
@@ -148,6 +163,8 @@ function ExpandedLayout({
   onClose,
   afterRowAction,
   openSettings,
+  syncFailed,
+  syncOffline,
 }: ExpandedProps) {
   const isMobile = useIsMobile();
   function runAfter() {
@@ -307,11 +324,20 @@ function ExpandedLayout({
             openSettings();
             runAfter();
           }}
-          aria-label="Settings"
-          className="inline-flex h-9 px-3 items-center gap-2 rounded-full border border-border text-fg-muted hover:bg-surface hover:text-fg transition-colors"
+          aria-label={syncFailed ? "Settings — sync needs attention" : "Settings"}
+          className="relative inline-flex h-9 px-3 items-center gap-2 rounded-full border border-border text-fg-muted hover:bg-surface hover:text-fg transition-colors"
         >
           <Settings2 size={14} />
           <span className="text-[12px] font-medium">Settings</span>
+          {syncFailed && (
+            <span
+              aria-hidden
+              className={
+                "absolute -top-0.5 -right-0.5 size-1.5 rounded-full " +
+                (syncOffline ? "bg-amber-400/70" : "bg-red-500")
+              }
+            />
+          )}
         </button>
       </footer>
     </motion.div>
@@ -326,6 +352,8 @@ type RailProps = {
   clearFocus: () => void;
   onExpand: () => void;
   openSettings: () => void;
+  syncFailed: boolean;
+  syncOffline: boolean;
 };
 
 function RailLayout({
@@ -336,6 +364,8 @@ function RailLayout({
   clearFocus,
   onExpand,
   openSettings,
+  syncFailed,
+  syncOffline,
 }: RailProps) {
   return (
     <motion.div
@@ -386,10 +416,19 @@ function RailLayout({
         <button
           type="button"
           onClick={openSettings}
-          aria-label="Settings"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-fg-muted hover:bg-surface hover:text-fg transition-colors"
+          aria-label={syncFailed ? "Settings — sync needs attention" : "Settings"}
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-fg-muted hover:bg-surface hover:text-fg transition-colors"
         >
           <Settings2 size={16} />
+          {syncFailed && (
+            <span
+              aria-hidden
+              className={
+                "absolute -top-0.5 -right-0.5 size-1.5 rounded-full " +
+                (syncOffline ? "bg-amber-400/70" : "bg-red-500")
+              }
+            />
+          )}
         </button>
         <ThemeToggle />
       </footer>
