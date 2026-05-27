@@ -276,6 +276,12 @@ export async function syncWithRetry(): Promise<void> {
       await setSyncFailure(messageOf(err), false);
       return;
     }
+    // Don't burn the 10s retry wait if we already know we're offline — the
+    // retry would just fail again. Persist offline state and bail.
+    if (nowOffline()) {
+      await setSyncFailure(messageOf(err), true);
+      return;
+    }
     await sleep(RETRY_DELAY_MS);
     try {
       await syncNow();

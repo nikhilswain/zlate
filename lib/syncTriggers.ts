@@ -6,6 +6,9 @@ import { getSyncMeta } from "./syncMeta";
 // debounce waits for write-silence, throttle blocks if the LAST sync was recent.
 const THROTTLE_MS = 5000;
 
+// Debounce window applied after every local Dexie write.
+export const WRITE_DEBOUNCE_MS = 5000;
+
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastAutoSyncAt = 0;
 let inFlightSync: Promise<void> | null = null;
@@ -30,7 +33,15 @@ export function scheduleAutoSync(delayMs: number): void {
 
 async function runAutoSync(): Promise<void> {
   if (isOffline()) return;
-  if (Date.now() - lastAutoSyncAt < THROTTLE_MS) return;
+
+  // Throttle: if a sync ran too recently, don't drop this trigger — reschedule
+  // it for when the throttle window clears, so reconnect/visibility syncs that
+  // land just after a prior sync still happen (just slightly delayed).
+  const elapsed = Date.now() - lastAutoSyncAt;
+  if (elapsed < THROTTLE_MS) {
+    scheduleAutoSync(THROTTLE_MS - elapsed);
+    return;
+  }
 
   const meta = await getSyncMeta();
   if (!meta.accountId) return; // sync not set up — nothing to do
@@ -48,12 +59,4 @@ async function runAutoSync(): Promise<void> {
   } finally {
     inFlightSync = null;
   }
-}
-
-// Test/escape hatch: reset module state (not used in app code).
-export function __resetSyncTriggers(): void {
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = null;
-  lastAutoSyncAt = 0;
-  inFlightSync = null;
 }
