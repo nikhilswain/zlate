@@ -12,7 +12,7 @@ import {
   syncNow,
   SyncError,
 } from "@/lib/sync";
-import { SYNC_META_ID } from "@/lib/syncMeta";
+import { SYNC_META_ID, setSyncFailure } from "@/lib/syncMeta";
 
 type View = "idle" | "code" | "signing-out";
 
@@ -21,9 +21,13 @@ type CodeState = { code: string; expiresAt: string };
 export function SyncSection() {
   const meta = useLiveQuery(() => db.syncMeta.get(SYNC_META_ID));
   const openPairingCodeModal = useUIStore((s) => s.openPairingCodeModal);
+  const syncInFlight = useUIStore((s) => s.syncInFlight);
 
   const accountId = meta?.accountId ?? null;
   const lastSyncedAt = meta?.lastSyncedAt ?? null;
+  const lastSyncFailedAt = meta?.lastSyncFailedAt ?? null;
+  const lastSyncError = meta?.lastSyncError ?? null;
+  const isOffline = meta?.isOffline ?? false;
 
   const [view, setView] = useState<View>("idle");
   const [working, setWorking] = useState<string | null>(null);
@@ -93,7 +97,11 @@ export function SyncSection() {
     try {
       await syncNow();
     } catch (err) {
-      setError(toMessage(err));
+      const message = toMessage(err);
+      setError(message);
+      const offline =
+        typeof navigator !== "undefined" && !navigator.onLine;
+      await setSyncFailure(message, offline);
     } finally {
       setWorking(null);
     }
@@ -209,6 +217,9 @@ export function SyncSection() {
         >
           {working === "sync" ? "Syncing…" : "Sync now"}
         </button>
+        {syncInFlight && working !== "sync" && (
+          <span className="text-[11px] text-fg-subtle">Syncing…</span>
+        )}
         <LastSyncedLabel lastSyncedAt={lastSyncedAt} />
       </div>
 
@@ -225,6 +236,34 @@ export function SyncSection() {
           {working === "code" ? "Generating…" : "Generate pairing code"}
         </button>
       </div>
+
+      {lastSyncFailedAt && (
+        <div className="border-t border-border-subtle pt-3">
+          {isOffline ? (
+            <div className="text-[11px] text-amber-400/90 leading-relaxed">
+              You&apos;re offline. Changes will sync when you reconnect.{" "}
+              <button
+                type="button"
+                onClick={handleSyncNow}
+                className="underline hover:text-fg transition-colors"
+              >
+                Retry now
+              </button>
+            </div>
+          ) : (
+            <div className="text-[11px] text-red-400 leading-relaxed">
+              Last sync failed: {lastSyncError}{" "}
+              <button
+                type="button"
+                onClick={handleSyncNow}
+                className="underline hover:text-fg transition-colors"
+              >
+                Retry now
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="border-t border-border-subtle pt-3">
         <button
