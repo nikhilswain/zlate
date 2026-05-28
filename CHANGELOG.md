@@ -12,7 +12,7 @@
 
 ### Internal
 
-- New `lib/syncTriggers.ts` — framework-agnostic scheduler owning the debounce timer, a 5 s throttle (blocks back-to-back syncs from event bursts), the `navigator.onLine` gate, and a module-level single-flight promise so two triggers never run overlapping syncs.
+- New `lib/syncTriggers.ts` — framework-agnostic scheduler owning the debounce timer, a 5 s throttle (a trigger landing too soon is deferred to when the window clears, not dropped — so reconnect/visibility syncs aren't lost), the `navigator.onLine` gate, and a module-level single-flight promise so two triggers never run overlapping syncs.
 - New `hooks/useSyncAutoTriggers.ts` + `components/shell/SyncAutoTriggers.tsx` — installs/cleans up the boot timer and `visibilitychange` / `online` / `offline` listeners. AppShell stays a server component; the hook lives behind a thin client boundary.
 - `lib/sync.ts` — `syncNow` now bails fast when `navigator.onLine` is false, flips the new `syncInFlight` store flag in a `try/finally`, and calls `clearSyncFailure()` on success. Added `syncWithRetry()` with transient-error classification by HTTP status.
 - `types/project.ts` / `lib/syncMeta.ts` — `SyncMeta` gains `lastSyncFailedAt`, `lastSyncError`, `isOffline` (additive — no Dexie schema bump; pre-existing rows default the new fields via a spread in `getSyncMeta`). New `setSyncFailure()` / `clearSyncFailure()` accessors; `clearSyncFailure` skips the write when nothing is set, avoiding a needless `useLiveQuery` re-render.
