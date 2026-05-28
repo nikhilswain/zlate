@@ -1,7 +1,5 @@
 # Zlate — Architecture
 
-> A complete, from-scratch description of how Zlate is built. Read top-to-bottom to understand the system; each section is also self-contained for reference. If you wanted to reimplement Zlate, this document plus the schema in `supabase/schema.sql` is enough to do it.
-
 ---
 
 ## 1. What Zlate is
@@ -13,8 +11,6 @@ The defining product decisions:
 - **Local-first.** All your data lives in the browser (IndexedDB). The app works fully offline, with no account required. There is no server round-trip to read or write your data.
 - **No accounts, no passwords, no email.** Cross-device sync is opt-in and uses an **anonymous account + pairing code** model (like linking a second device to a messaging app), so there is nothing to remember and no PII to leak.
 - **Sync is a convenience layer, not the source of truth.** The browser is authoritative. The server is a dumb, multi-tenant row store that exists only to shuttle data between your devices.
-- **Quiet, fast UI.** Everything is reactive (the calendar re-renders the instant data changes), animated with restraint, and themeable (dark/light) with no flash-of-wrong-theme on load.
-
 ---
 
 ## 2. Tech stack and why
