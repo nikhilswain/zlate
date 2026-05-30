@@ -9,6 +9,8 @@ import { PROJECT_EMOJIS, PROJECT_PALETTE } from "@/lib/palette";
 import { useProjectDayNotes } from "@/hooks/useProjectDayNotes";
 import { CharCounter } from "./CharCounter";
 import { ProjectRangeCalendar } from "./ProjectRangeCalendar";
+import { ProjectProgressSummary } from "./ProjectProgressSummary";
+import { durationDays, formatDuration } from "@/lib/projectProgress";
 import type { Project } from "@/types/project";
 
 const PALETTE = PROJECT_PALETTE;
@@ -53,20 +55,27 @@ export function ProjectSettingsView({ project, onClose }: Props) {
   return (
     <>
       <header className="flex items-start justify-between px-5 py-4 border-b border-border-subtle">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span
-            aria-hidden
-            className="size-3.5 rounded-full shrink-0"
-            style={{ background: color }}
-          />
-          {icon && (
-            <span aria-hidden className="text-lg leading-none">
-              {icon}
+        <div className="flex flex-col min-w-0 flex-1 mr-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              aria-hidden
+              className="size-3.5 rounded-full shrink-0"
+              style={{ background: color }}
+            />
+            {icon && (
+              <span aria-hidden className="text-lg leading-none">
+                {icon}
+              </span>
+            )}
+            <span className="text-[15px] font-medium text-fg truncate">
+              {project.name}
             </span>
-          )}
-          <span className="text-[15px] font-medium text-fg truncate">
-            {project.name}
-          </span>
+          </div>
+          <ProjectProgressSummary
+            start={project.startDate}
+            end={project.endDate}
+            color={color}
+          />
         </div>
         <button
           type="button"
@@ -194,6 +203,9 @@ export function ProjectSettingsView({ project, onClose }: Props) {
           />
           <div className="mt-2 text-[11px] text-fg-subtle">
             {format(startDate, "EEE, MMM d")} → {format(endDate, "EEE, MMM d")}
+          </div>
+          <div className="mt-0.5 text-[11px] text-fg-subtle">
+            {formatDuration(durationDays(startDate, endDate))}
           </div>
         </Field>
 

@@ -12,6 +12,7 @@ import {
 } from "@/lib/dayNotes";
 import { readableTextColor } from "@/lib/contrast";
 import { isPastDay } from "@/lib/dateRange";
+import { formatDayContext, getDayContext } from "@/lib/projectProgress";
 import { CharCounter } from "./CharCounter";
 import type { Project } from "@/types/project";
 
@@ -90,6 +91,9 @@ export function DayNoteView({ project, dateKey, onClose }: Props) {
             style={{ opacity: past ? 0.85 : 1 }}
           >
             {format(date, "EEEE · MMM d")}
+          </div>
+          <div className="text-[11px] text-fg-muted leading-tight">
+            {formatDayContext(getDayContext(project.startDate, project.endDate, date))}
           </div>
           <button
             type="button"
